@@ -314,16 +314,84 @@ public class IntegrationTests
     // ── VRP ────────────────────────────────────────────────────────────────
 
     [SkippableFact]
-    public async Task Vrp_DashboardKeysAndHySpreadHardcode()
+    public async Task Vrp_EveryFieldDeclaredInPocoMustBeReferenced()
     {
         Skip.IfNot(HasKey, SkipReason);
         using var client = MakeClient();
         var v = await client.VrpAsync("SPY", SpyAt);
+
+        // ── top-level scalars ──
+        Assert.Equal("SPY", v.GetProperty("symbol").GetString());
+        Assert.Equal(JsonValueKind.Number, v.GetProperty("underlying_price").ValueKind);
+        Assert.Equal(JsonValueKind.String, v.GetProperty("as_of").ValueKind);
+        var mkt = v.GetProperty("market_open").ValueKind;
+        Assert.True(mkt == JsonValueKind.True || mkt == JsonValueKind.False, "market_open must be a boolean");
+        Assert.Equal(JsonValueKind.Number, v.GetProperty("variance_risk_premium").ValueKind);
+        Assert.Equal(JsonValueKind.Number, v.GetProperty("convexity_premium").ValueKind);
+        Assert.Equal(JsonValueKind.Number, v.GetProperty("fair_vol").ValueKind);
+        Assert.True(v.TryGetProperty("dealer_flow_risk", out _));
+        Assert.Equal(JsonValueKind.Array, v.GetProperty("warnings").ValueKind);
+        // strategy_scores / net_harvest_score: nullable on historical
+        Assert.True(v.TryGetProperty("strategy_scores", out var ssElem));
+        Assert.True(v.TryGetProperty("net_harvest_score", out _));
+        if (ssElem.ValueKind != JsonValueKind.Null)
+        {
+            foreach (var k in new[] { "short_put_spread", "short_strangle", "iron_condor", "calendar_spread" })
+                Assert.True(ssElem.TryGetProperty(k, out _));
+        }
+        // Customer trap: net_gex must NOT be top-level
+        Assert.False(v.TryGetProperty("net_gex", out _));
+
+        // ── vrp.* core block ──
         var core = v.GetProperty("vrp");
         foreach (var k in new[] { "atm_iv", "rv_5d", "rv_10d", "rv_20d", "rv_30d",
                                   "vrp_5d", "vrp_10d", "vrp_20d", "vrp_30d" })
-            Assert.True(core.TryGetProperty(k, out _));
-        Assert.Equal(3.5, v.GetProperty("macro").GetProperty("hy_spread").GetDouble());
+            Assert.Equal(JsonValueKind.Number, core.GetProperty(k).ValueKind);
+        Assert.True(core.TryGetProperty("z_score", out _)); // nullable
+        Assert.True(core.TryGetProperty("percentile", out _)); // nullable
+        Assert.Equal(JsonValueKind.Number, core.GetProperty("history_days").ValueKind);
+
+        // ── directional ──
+        var dir = v.GetProperty("directional");
+        foreach (var k in new[] { "put_wing_iv_25d", "call_wing_iv_25d",
+                                  "downside_rv_20d", "upside_rv_20d",
+                                  "downside_vrp", "upside_vrp" })
+            Assert.Equal(JsonValueKind.Number, dir.GetProperty(k).ValueKind);
+        Assert.False(dir.TryGetProperty("put_vrp", out _));
+        Assert.False(dir.TryGetProperty("call_vrp", out _));
+
+        // ── term_vrp[] ──
+        var term = v.GetProperty("term_vrp");
+        Assert.Equal(JsonValueKind.Array, term.ValueKind);
+        Assert.True(term.GetArrayLength() > 0);
+        var first = term[0];
+        foreach (var k in new[] { "dte", "iv", "rv", "vrp" })
+            Assert.True(first.TryGetProperty(k, out _));
+
+        // ── gex_conditioned ──
+        var gc = v.GetProperty("gex_conditioned");
+        Assert.Equal(JsonValueKind.String, gc.GetProperty("regime").ValueKind);
+        Assert.Equal(JsonValueKind.Number, gc.GetProperty("harvest_score").ValueKind);
+        Assert.Equal(JsonValueKind.String, gc.GetProperty("interpretation").ValueKind);
+
+        // ── vanna_conditioned ──
+        var vc = v.GetProperty("vanna_conditioned");
+        Assert.Equal(JsonValueKind.String, vc.GetProperty("outlook").ValueKind);
+        Assert.Equal(JsonValueKind.String, vc.GetProperty("interpretation").ValueKind);
+
+        // ── regime — net_gex lives HERE ──
+        var reg = v.GetProperty("regime");
+        Assert.Equal(JsonValueKind.String, reg.GetProperty("gamma").ValueKind);
+        Assert.True(reg.TryGetProperty("vrp_regime", out _)); // nullable
+        Assert.Equal(JsonValueKind.Number, reg.GetProperty("net_gex").ValueKind);
+        Assert.Equal(JsonValueKind.Number, reg.GetProperty("gamma_flip").ValueKind);
+
+        // ── macro (historical-specific shape) ──
+        var macro = v.GetProperty("macro");
+        foreach (var k in new[] { "vix", "vix_3m", "vix_term_slope", "dgs10", "hy_spread" })
+            Assert.Equal(JsonValueKind.Number, macro.GetProperty(k).ValueKind);
+        // fed_funds is live-only — must NOT be present on historical
+        Assert.False(macro.TryGetProperty("fed_funds", out _));
     }
 
     // ── Max Pain ───────────────────────────────────────────────────────────
