@@ -21,7 +21,7 @@ public class IntegrationTests
     private const double SpotTol = 1.0;
 
     private static readonly HashSet<string> Regimes =
-        new() { "positive_gamma", "negative_gamma", "transition" };
+        new() { "positive_gamma", "negative_gamma", "neutral", "undetermined" };
 
     private static readonly string? ApiKey = Environment.GetEnvironmentVariable("FLASHALPHA_API_KEY");
 
@@ -125,22 +125,51 @@ public class IntegrationTests
     // ── Exposure ───────────────────────────────────────────────────────────
 
     [SkippableFact]
-    public async Task ExposureSummary_ShapeAndInvariants()
+    public async Task ExposureSummary_EveryFieldDeclaredInPocoMustBeReferenced()
     {
         Skip.IfNot(HasKey, SkipReason);
         using var client = MakeClient();
         var s = await client.ExposureSummaryAsync("SPY", SpyAt);
+        // ── top-level scalars ──
         Assert.Equal("SPY", s.GetProperty("symbol").GetString());
         Assert.True(Math.Abs(s.GetProperty("underlying_price").GetDouble() - ExpectedSpot) < SpotTol);
+        Assert.Equal(JsonValueKind.String, s.GetProperty("as_of").ValueKind);
+        Assert.False(string.IsNullOrEmpty(s.GetProperty("as_of").GetString()));
+        Assert.Equal(SpyAt, s.GetProperty("as_of").GetString()); // historical snaps to requested minute
         Assert.Contains(s.GetProperty("regime").GetString()!, Regimes);
         Assert.Equal(JsonValueKind.Number, s.GetProperty("gamma_flip").ValueKind);
+        // ── exposures block (4 fields) ──
         var e = s.GetProperty("exposures");
         foreach (var k in new[] { "net_gex", "net_dex", "net_vex", "net_chex" })
             Assert.Equal(JsonValueKind.Number, e.GetProperty(k).ValueKind);
+        // ── interpretation block (3 fields) ──
+        var interp = s.GetProperty("interpretation");
+        foreach (var k in new[] { "gamma", "vanna", "charm" })
+        {
+            Assert.Equal(JsonValueKind.String, interp.GetProperty(k).ValueKind);
+            Assert.False(string.IsNullOrEmpty(interp.GetProperty(k).GetString()));
+        }
+        // ── hedging_estimate (every leaf on both sides) ──
         var h = s.GetProperty("hedging_estimate");
+        foreach (var sideKey in new[] { "spot_up_1pct", "spot_down_1pct" })
+        {
+            var side = h.GetProperty(sideKey);
+            Assert.Contains(side.GetProperty("direction").GetString(), new[] { "buy", "sell" });
+            Assert.Equal(JsonValueKind.Number, side.GetProperty("dealer_shares_to_trade").ValueKind);
+            Assert.Equal(JsonValueKind.Number, side.GetProperty("notional_usd").ValueKind);
+            Assert.NotEqual(0, side.GetProperty("notional_usd").GetInt64());
+        }
         var up = h.GetProperty("spot_up_1pct").GetProperty("dealer_shares_to_trade").GetInt64();
         var down = h.GetProperty("spot_down_1pct").GetProperty("dealer_shares_to_trade").GetInt64();
         Assert.Equal(up, -down);
+        // ── zero_dte block (3 fields) ──
+        var z = s.GetProperty("zero_dte");
+        Assert.True(z.TryGetProperty("net_gex", out var zng));
+        Assert.True(zng.ValueKind == JsonValueKind.Null || zng.ValueKind == JsonValueKind.Number);
+        Assert.True(z.TryGetProperty("pct_of_total_gex", out var zpct));
+        Assert.True(zpct.ValueKind == JsonValueKind.Null || zpct.ValueKind == JsonValueKind.Number);
+        Assert.True(z.TryGetProperty("expiration", out var zexp));
+        Assert.True(zexp.ValueKind == JsonValueKind.Null || zexp.ValueKind == JsonValueKind.String);
     }
 
     [SkippableFact]
