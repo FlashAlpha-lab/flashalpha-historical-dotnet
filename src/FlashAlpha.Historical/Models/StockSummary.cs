@@ -21,10 +21,8 @@ namespace FlashAlpha.Historical.Models;
 ///   <item><see cref="AsOf"/> is the as-of stamp the API actually used —
 ///     SNAPPED to the available minute. It will not always equal the
 ///     <c>at</c> value passed in the request.</item>
-///   <item>Macro fields can behave differently: <c>fed_funds</c> may be
-///     absent on historical responses; other macro sub-blocks may be
-///     <c>null</c> when the historical record for the requested minute is
-///     missing.</item>
+///   <item>Macro sub-blocks may be <c>null</c> when the historical record
+///     for the requested minute is missing.</item>
 ///   <item>Volume-related fields in <see cref="StockSummaryOptionsFlow"/>
 ///     reflect end-of-day aggregates from the minute table — they are not
 ///     intraday running totals.</item>
@@ -75,8 +73,8 @@ public sealed class StockSummaryResponse
 
     /// <summary>
     /// Macro context (VIX, VVIX, SKEW, MOVE, SPX, term structure, fear-and-greed).
-    /// Behavior diff vs live: <c>fed_funds</c> may be absent and individual
-    /// macro sub-blocks may be <c>null</c> when historical records are missing.
+    /// Behavior diff vs live: individual macro sub-blocks may be <c>null</c>
+    /// when historical records for the requested minute are missing.
     /// </summary>
     [JsonPropertyName("macro")]
     public StockSummaryMacro? Macro { get; set; }
@@ -221,7 +219,7 @@ public sealed class StockSummaryOptionsFlow
 /// walls, max pain, hedging estimates, 0DTE breakdown, top strikes.
 ///
 /// <para><see cref="Regime"/> is one of <c>"positive_gamma"</c>,
-/// <c>"negative_gamma"</c>, <c>"undetermined"</c> — derived from spot vs
+/// <c>"negative_gamma"</c>, <c>"unknown"</c> — derived from spot vs
 /// <see cref="GammaFlip"/>.</para>
 ///
 /// <para><see cref="TopStrikes"/> returns up to 5 strikes ranked by
@@ -266,7 +264,7 @@ public sealed class StockSummaryExposure
     public double? HighestOiStrike { get; set; }
 
     /// <summary>
-    /// <c>"positive_gamma"</c> | <c>"negative_gamma"</c> | <c>"undetermined"</c>.
+    /// <c>"positive_gamma"</c> | <c>"negative_gamma"</c> | <c>"unknown"</c>.
     /// </summary>
     [JsonPropertyName("regime")]
     public string? Regime { get; set; }
@@ -380,9 +378,7 @@ public sealed class StockSummaryTopStrike
 /// and fear-and-greed.
 ///
 /// <para><b>Historical-specific behavior:</b> any sub-field can be
-/// <c>null</c> when the historical record for that minute is missing.
-/// <c>fed_funds</c> may not be populated on historical responses (it's a
-/// live-only field on the API).</para>
+/// <c>null</c> when the historical record for that minute is missing.</para>
 ///
 /// <para><b>Approximation note:</b>
 /// <see cref="StockSummaryVixFutures.Basis"/> is approximated from VIX3M vs

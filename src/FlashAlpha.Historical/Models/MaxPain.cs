@@ -82,7 +82,7 @@ public sealed class MaxPainResponse
 
     /// <summary>
     /// Same gamma classification as on <c>exposure_summary.regime</c>:
-    /// <c>"positive_gamma"</c> | <c>"negative_gamma"</c> | <c>"neutral"</c> | <c>"undetermined"</c>.
+    /// <c>"positive_gamma"</c> | <c>"negative_gamma"</c> | <c>"unknown"</c>.
     /// </summary>
     [JsonPropertyName("regime")]
     public string? Regime { get; set; }

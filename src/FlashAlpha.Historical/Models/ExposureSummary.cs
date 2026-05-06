@@ -34,8 +34,8 @@ public sealed class ExposureSummaryResponse
     public double? GammaFlip { get; set; }
 
     /// <summary>
-    /// One of <c>"positive_gamma"</c>, <c>"negative_gamma"</c>,
-    /// <c>"neutral"</c>, or <c>"undetermined"</c>.
+    /// One of <c>"positive_gamma"</c>, <c>"negative_gamma"</c>, or
+    /// <c>"unknown"</c>.
     /// </summary>
     [JsonPropertyName("regime")]
     public string? Regime { get; set; }
