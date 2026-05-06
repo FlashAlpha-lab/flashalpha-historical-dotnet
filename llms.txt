@@ -1,0 +1,119 @@
+# FlashAlpha.Historical .NET SDK
+
+> Official .NET / C# client for the **FlashAlpha Historical API** —
+> point-in-time replay of every live options-analytics endpoint
+> (GEX, gamma flip, VRP, narrative, max pain, 0DTE, full stock
+> summary, exposure levels) at any minute back to 2018-04-16.
+
+Same response shapes as the live FlashAlpha API — just pass an `at`
+timestamp to ask "what did dealer positioning look like at 14:30 ET on
+2020-03-16?". Backtest options strategies against 6.7B+ option rows.
+
+- Package: `dotnet add package FlashAlpha.Historical`
+- Target: .NET 8.0+
+- Auth: same `X-Api-Key` you use for `api.flashalpha.com`
+- Playground: <https://lab.flashalpha.com/swagger>
+- API project URL: <https://historical.flashalpha.com>
+
+## What this SDK provides
+
+- `FlashAlphaHistoricalClient` — typed, async, `IDisposable` HTTP wrapper.
+  Every analytics method takes a required `at` parameter (string or
+  `DateTime`).
+- `Backtester` and `Replay` — high-level helpers for iterating across
+  daily / minute-resolution timestamps and running a callback per step.
+- Typed response POCOs under `FlashAlpha.Historical.Models` — same field
+  names as the live SDK so you can swap clients without changing consumer
+  code.
+
+## Sister package
+
+`FlashAlpha` (separate NuGet) is the live variant — drop the `at=`
+parameter and you have real-time analytics. The two SDKs use deliberately
+identical POCO shapes.
+
+## Endpoints (selected highlights)
+
+| Endpoint | SDK method |
+|---|---|
+| `GET /v1/stock/{symbol}/summary?at=...` | `StockSummaryAsync` |
+| `GET /v1/exposure/gex/{symbol}?at=...` | `GexAsync` |
+| `GET /v1/exposure/levels/{symbol}?at=...` | `ExposureLevelsAsync` |
+| `GET /v1/exposure/summary/{symbol}?at=...` | `ExposureSummaryAsync` |
+| `GET /v1/exposure/narrative/{symbol}?at=...` | `NarrativeAsync` |
+| `GET /v1/exposure/zero-dte/{symbol}?at=...` | `ZeroDteAsync` |
+| `GET /v1/maxpain/{symbol}?at=...` | `MaxPainAsync` |
+| `GET /v1/vrp/{symbol}?at=...` | `VrpAsync` |
+| `GET /v1/stockquote/{symbol}?at=...` | `StockQuoteAsync` |
+| `GET /v1/optionquote/{symbol}?at=...` | `OptionQuoteAsync` |
+| `GET /v1/surface/{symbol}?at=...` | `SurfaceAsync` |
+
+The `at` parameter accepts:
+- `"2026-03-05T15:30:00"` (full ISO timestamp, ET assumed)
+- `"2026-03-05"` (defaults to 16:00 ET)
+- `DateTime` overload
+
+## Typed response models
+
+POCOs live under `FlashAlpha.Historical.Models` (`StockSummaryResponse`,
+`ExposureSummaryResponse`, `ExposureLevelsResponse`, `NarrativeResponse`,
+`MaxPainResponse`, `VrpResponse`, `ZeroDteResponse`). Field names and
+nullability mirror the live API.
+
+`AsOf` on every typed response is the timestamp the API actually used —
+**snapped to the available minute**, may not equal the `at` you requested.
+
+## Tier breakdown
+
+The Historical API requires the **Alpha plan or higher** on every
+endpoint. Sign up: <https://flashalpha.com>.
+
+## Quick start
+
+```csharp
+using FlashAlpha.Historical;
+
+using var hx = new FlashAlphaHistoricalClient("YOUR_API_KEY");
+
+// What did dealer positioning look like during the COVID crash?
+var snap = await hx.ExposureSummaryAsync("SPY", "2020-03-16T15:30:00");
+Console.WriteLine(snap.GetProperty("regime").GetString());
+// → "negative_gamma"
+```
+
+### Daily replay
+
+```csharp
+using FlashAlpha.Historical;
+
+using var hx = new FlashAlphaHistoricalClient("YOUR_API_KEY");
+var bt = new Backtester(hx, Backtester.StockSummaryEndpoint, "SPY");
+
+var results = await bt.RunAsync(
+    Replay.IterDays(new(2024, 1, 2), new(2024, 3, 29)),
+    (at, snap) => new
+    {
+        Vrp = snap.GetProperty("volatility").GetProperty("vrp").GetDouble(),
+        Regime = snap.GetProperty("exposure").GetProperty("regime").GetString(),
+    });
+```
+
+### Minute-resolution replay
+
+```csharp
+await foreach (var step in Replay.RunAsync(
+    hx, Backtester.ExposureSummaryEndpoint, "SPY",
+    Replay.IterMinutes(new(2025, 1, 15), new(2025, 1, 15), stepMinutes: 15)))
+{
+    Console.WriteLine($"{step.At} {step.Response.GetProperty("regime").GetString()}");
+}
+```
+
+## Links
+
+- <https://flashalpha.com> — sign up
+- <https://historical.flashalpha.com> — historical API project page
+- <https://lab.flashalpha.com/swagger> — interactive playground
+- <https://github.com/FlashAlpha-lab/flashalpha-historical-dotnet> — this repository
+- <https://www.nuget.org/packages/FlashAlpha.Historical> — NuGet package
+- <https://github.com/FlashAlpha-lab/flashalpha-dotnet> — live SDK
