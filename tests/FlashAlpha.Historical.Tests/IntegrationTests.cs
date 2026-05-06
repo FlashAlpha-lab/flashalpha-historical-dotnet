@@ -412,6 +412,88 @@ public class IntegrationTests
         Assert.True(Math.Abs(minPair.Strike - maxPainStrike) <= 5);
     }
 
+    [SkippableFact]
+    public async Task MaxPain_EveryFieldDeclaredInPocoMustBeReferenced()
+    {
+        Skip.IfNot(HasKey, SkipReason);
+        using var client = MakeClient();
+        // Full-chain (no expiration) so max_pain_by_expiration is populated.
+        var r = await client.MaxPainAsync("SPY", SpyAt);
+
+        // ── top-level scalars ──
+        Assert.Equal("SPY", r.GetProperty("symbol").GetString());
+        Assert.Equal(JsonValueKind.Number, r.GetProperty("underlying_price").ValueKind);
+        Assert.Equal(JsonValueKind.String, r.GetProperty("as_of").ValueKind);
+        Assert.Equal(JsonValueKind.Number, r.GetProperty("max_pain_strike").ValueKind);
+        Assert.Contains(r.GetProperty("signal").GetString(), new[] { "bullish", "bearish", "neutral" });
+        Assert.Equal(JsonValueKind.String, r.GetProperty("expiration").ValueKind);
+        Assert.Equal(JsonValueKind.Number, r.GetProperty("put_call_oi_ratio").ValueKind);
+        Assert.Contains(r.GetProperty("regime").GetString(),
+            new[] { "positive_gamma", "negative_gamma", "neutral", "undetermined" });
+        var pin = r.GetProperty("pin_probability").GetInt32();
+        Assert.InRange(pin, 0, 100);
+
+        // ── distance ──
+        var dist = r.GetProperty("distance");
+        Assert.Equal(JsonValueKind.Number, dist.GetProperty("absolute").ValueKind);
+        Assert.Equal(JsonValueKind.Number, dist.GetProperty("percent").ValueKind);
+        Assert.Contains(dist.GetProperty("direction").GetString(), new[] { "above", "below", "at" });
+
+        // ── pain_curve[] ──
+        var pc = r.GetProperty("pain_curve");
+        Assert.Equal(JsonValueKind.Array, pc.ValueKind);
+        Assert.True(pc.GetArrayLength() > 0);
+        var pcRow = pc[0];
+        foreach (var k in new[] { "strike", "call_pain", "put_pain", "total_pain" })
+            Assert.Equal(JsonValueKind.Number, pcRow.GetProperty(k).ValueKind);
+
+        // ── oi_by_strike[] — historical: volume fields are 0 placeholders ──
+        var oi = r.GetProperty("oi_by_strike");
+        Assert.Equal(JsonValueKind.Array, oi.ValueKind);
+        Assert.True(oi.GetArrayLength() > 0);
+        var oiRow = oi[0];
+        foreach (var k in new[] { "strike", "call_oi", "put_oi", "total_oi", "call_volume", "put_volume" })
+            Assert.Equal(JsonValueKind.Number, oiRow.GetProperty(k).ValueKind);
+        Assert.Equal(0, oiRow.GetProperty("call_volume").GetInt32());
+        Assert.Equal(0, oiRow.GetProperty("put_volume").GetInt32());
+
+        // ── max_pain_by_expiration[] ──
+        var mpe = r.GetProperty("max_pain_by_expiration");
+        Assert.Equal(JsonValueKind.Array, mpe.ValueKind);
+        Assert.True(mpe.GetArrayLength() > 0);
+        var mpeRow = mpe[0];
+        Assert.Equal(JsonValueKind.String, mpeRow.GetProperty("expiration").ValueKind);
+        Assert.Equal(JsonValueKind.Number, mpeRow.GetProperty("max_pain_strike").ValueKind);
+        Assert.Equal(JsonValueKind.Number, mpeRow.GetProperty("dte").ValueKind);
+        Assert.Equal(JsonValueKind.Number, mpeRow.GetProperty("total_oi").ValueKind);
+
+        // ── dealer_alignment ──
+        var da = r.GetProperty("dealer_alignment");
+        Assert.Contains(da.GetProperty("alignment").GetString(),
+            new[] { "converging", "moderate", "diverging", "unknown" });
+        Assert.Equal(JsonValueKind.String, da.GetProperty("description").ValueKind);
+        foreach (var k in new[] { "gamma_flip", "call_wall", "put_wall" })
+            Assert.Equal(JsonValueKind.Number, da.GetProperty(k).ValueKind);
+
+        // ── expected_move ──
+        var em = r.GetProperty("expected_move");
+        Assert.Equal(JsonValueKind.Number, em.GetProperty("straddle_price").ValueKind);
+        Assert.Equal(JsonValueKind.Number, em.GetProperty("atm_iv").ValueKind);
+        var rng = em.GetProperty("max_pain_within_expected_range").ValueKind;
+        Assert.True(rng == JsonValueKind.True || rng == JsonValueKind.False);
+    }
+
+    [SkippableFact]
+    public async Task MaxPain_ExpirationFilter_SuppressesCalendar()
+    {
+        Skip.IfNot(HasKey, SkipReason);
+        using var client = MakeClient();
+        var mp = await client.MaxPainAsync("SPY", SpyAt, expiration: "2024-08-09");
+        // When expiration filter is set, max_pain_by_expiration is null.
+        var kind = mp.GetProperty("max_pain_by_expiration").ValueKind;
+        Assert.Equal(JsonValueKind.Null, kind);
+    }
+
     // ── Errors ─────────────────────────────────────────────────────────────
 
     [SkippableFact]
