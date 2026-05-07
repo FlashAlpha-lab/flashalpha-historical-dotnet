@@ -808,6 +808,361 @@ public class IntegrationTests
         // ZeroDteMagnet — explicit assertion was missing in Levels_KeysPresent
         Assert.NotNull(r.Levels.ZeroDteMagnet);
     }
+
+    // ── rc.9 typed-POCO field-walk coverage ──────────────────────────────────
+    //
+    // Each test below calls the typed wrapper and asserts every public
+    // property is populated (non-null) recursively. A renamed/deleted
+    // JsonPropertyName surfaces immediately as a NotNull failure.
+    // Historical caveats: per-strike call_volume / put_volume are 0
+    // placeholders; volume-derived ratios under Volatility's PutCallProfile
+    // are nullable.
+
+    [SkippableFact]
+    public async Task Volatility_EveryFieldDeclaredInPocoMustBeReferenced()
+    {
+        Skip.IfNot(HasKey, SkipReason);
+        using var client = MakeClient();
+        var r = await client.VolatilityTypedAsync("SPY", SpyAt);
+        Assert.NotNull(r);
+
+        // top-level
+        Assert.Equal("SPY", r!.Symbol);
+        Assert.NotNull(r.UnderlyingPrice);
+        Assert.NotNull(r.AsOf);
+        Assert.NotNull(r.MarketOpen);
+        Assert.NotNull(r.AtmIv);
+
+        // realized_vol
+        Assert.NotNull(r.RealizedVol);
+        Assert.NotNull(r.RealizedVol!.Rv5d);
+        Assert.NotNull(r.RealizedVol.Rv10d);
+        Assert.NotNull(r.RealizedVol.Rv20d);
+        Assert.NotNull(r.RealizedVol.Rv30d);
+        Assert.NotNull(r.RealizedVol.Rv60d);
+
+        // iv_rv_spreads
+        Assert.NotNull(r.IvRvSpreads);
+        Assert.NotNull(r.IvRvSpreads!.Vrp5d);
+        Assert.NotNull(r.IvRvSpreads.Vrp10d);
+        Assert.NotNull(r.IvRvSpreads.Vrp20d);
+        Assert.NotNull(r.IvRvSpreads.Vrp30d);
+        Assert.NotNull(r.IvRvSpreads.Assessment);
+
+        // skew_profiles[0]
+        Assert.NotNull(r.SkewProfiles);
+        if (r.SkewProfiles!.Count > 0)
+        {
+            var sp = r.SkewProfiles[0];
+            Assert.NotNull(sp.Expiry);
+            Assert.NotNull(sp.DaysToExpiry);
+            Assert.NotNull(sp.Put10dIv);
+            Assert.NotNull(sp.Put25dIv);
+            Assert.NotNull(sp.AtmIv);
+            Assert.NotNull(sp.Call25dIv);
+            Assert.NotNull(sp.Call10dIv);
+            Assert.NotNull(sp.Skew25d);
+            Assert.NotNull(sp.SmileRatio);
+            Assert.NotNull(sp.TailConvexity);
+        }
+
+        // term_structure
+        Assert.NotNull(r.TermStructure);
+        Assert.NotNull(r.TermStructure!.NearSlopePct);
+        Assert.NotNull(r.TermStructure.FarSlopePct);
+        Assert.NotNull(r.TermStructure.State);
+
+        // iv_dispersion
+        Assert.NotNull(r.IvDispersion);
+        Assert.NotNull(r.IvDispersion!.CrossExpiry);
+        Assert.NotNull(r.IvDispersion.CrossStrike);
+
+        // gex_by_dte[0]
+        Assert.NotNull(r.GexByDte);
+        if (r.GexByDte!.Count > 0)
+        {
+            var g = r.GexByDte[0];
+            Assert.NotNull(g.Bucket);
+            Assert.NotNull(g.NetGex);
+            Assert.NotNull(g.PctOfTotal);
+            Assert.NotNull(g.ContractCount);
+        }
+
+        // theta_by_dte[0]
+        Assert.NotNull(r.ThetaByDte);
+        if (r.ThetaByDte!.Count > 0)
+        {
+            var t = r.ThetaByDte[0];
+            Assert.NotNull(t.Bucket);
+            Assert.NotNull(t.NetTheta);
+            Assert.NotNull(t.ContractCount);
+        }
+
+        // put_call_profile
+        Assert.NotNull(r.PutCallProfile);
+        Assert.NotNull(r.PutCallProfile!.ByExpiry);
+        if (r.PutCallProfile.ByExpiry!.Count > 0)
+        {
+            var pcr = r.PutCallProfile.ByExpiry[0];
+            Assert.NotNull(pcr.Expiry);
+            Assert.NotNull(pcr.CallOi);
+            Assert.NotNull(pcr.PutOi);
+            Assert.NotNull(pcr.PcRatioOi);
+            // call_volume / put_volume are 0 placeholders on historical but
+            // the int? is still populated (with 0)
+            Assert.NotNull(pcr.CallVolume);
+            Assert.NotNull(pcr.PutVolume);
+            // pc_ratio_volume nullable on historical (volumes are 0)
+        }
+        Assert.NotNull(r.PutCallProfile.ByMoneyness);
+        Assert.NotNull(r.PutCallProfile.ByMoneyness!.OtmCallOi);
+        Assert.NotNull(r.PutCallProfile.ByMoneyness.AtmCallOi);
+        Assert.NotNull(r.PutCallProfile.ByMoneyness.ItmCallOi);
+        Assert.NotNull(r.PutCallProfile.ByMoneyness.OtmPutOi);
+        Assert.NotNull(r.PutCallProfile.ByMoneyness.AtmPutOi);
+        Assert.NotNull(r.PutCallProfile.ByMoneyness.ItmPutOi);
+
+        // oi_concentration
+        Assert.NotNull(r.OiConcentration);
+        Assert.NotNull(r.OiConcentration!.Top3Pct);
+        Assert.NotNull(r.OiConcentration.Top5Pct);
+        Assert.NotNull(r.OiConcentration.Top10Pct);
+        Assert.NotNull(r.OiConcentration.Herfindahl);
+
+        // hedging_scenarios[0]
+        Assert.NotNull(r.HedgingScenarios);
+        if (r.HedgingScenarios!.Count > 0)
+        {
+            var h = r.HedgingScenarios[0];
+            Assert.NotNull(h.MovePct);
+            Assert.NotNull(h.DealerShares);
+            Assert.NotNull(h.Direction);
+            Assert.NotNull(h.NotionalUsd);
+        }
+
+        // liquidity
+        Assert.NotNull(r.Liquidity);
+        Assert.NotNull(r.Liquidity!.AtmAvgSpreadPct);
+        Assert.NotNull(r.Liquidity.WingAvgSpreadPct);
+        Assert.NotNull(r.Liquidity.AtmContracts);
+        Assert.NotNull(r.Liquidity.WingContracts);
+    }
+
+    [SkippableFact]
+    public async Task AdvVolatility_EveryFieldDeclaredInPocoMustBeReferenced()
+    {
+        Skip.IfNot(HasKey, SkipReason);
+        using var client = MakeClient();
+        var r = await client.AdvVolatilityTypedAsync("SPY", SpyAt);
+        Assert.NotNull(r);
+
+        Assert.Equal("SPY", r!.Symbol);
+        Assert.NotNull(r.UnderlyingPrice);
+        Assert.NotNull(r.AsOf);
+        Assert.NotNull(r.MarketOpen);
+
+        // svi_parameters[0]
+        Assert.NotNull(r.SviParameters);
+        if (r.SviParameters!.Count > 0)
+        {
+            var s = r.SviParameters[0];
+            Assert.NotNull(s.Expiry);
+            Assert.NotNull(s.DaysToExpiry);
+            Assert.NotNull(s.Forward);
+            Assert.NotNull(s.A);
+            Assert.NotNull(s.B);
+            Assert.NotNull(s.Rho);
+            Assert.NotNull(s.M);
+            Assert.NotNull(s.Sigma);
+            Assert.NotNull(s.AtmTotalVariance);
+            Assert.NotNull(s.AtmIv);
+        }
+
+        // forward_prices[0]
+        Assert.NotNull(r.ForwardPrices);
+        if (r.ForwardPrices!.Count > 0)
+        {
+            var f = r.ForwardPrices[0];
+            Assert.NotNull(f.Expiry);
+            Assert.NotNull(f.DaysToExpiry);
+            Assert.NotNull(f.Forward);
+            Assert.NotNull(f.Spot);
+            Assert.NotNull(f.BasisPct);
+        }
+
+        // total_variance_surface
+        Assert.NotNull(r.TotalVarianceSurface);
+        Assert.NotNull(r.TotalVarianceSurface!.Moneyness);
+        Assert.NotNull(r.TotalVarianceSurface.Expiries);
+        Assert.NotNull(r.TotalVarianceSurface.Tenors);
+        Assert.NotNull(r.TotalVarianceSurface.TotalVariance);
+        Assert.NotNull(r.TotalVarianceSurface.ImpliedVol);
+
+        // arbitrage_flags — list itself must be present (may be empty)
+        Assert.NotNull(r.ArbitrageFlags);
+        foreach (var a in r.ArbitrageFlags!)
+        {
+            Assert.NotNull(a.Expiry);
+            Assert.NotNull(a.Type);
+            Assert.NotNull(a.StrikeOrK);
+            Assert.NotNull(a.Description);
+        }
+
+        // variance_swap_fair_values[0]
+        Assert.NotNull(r.VarianceSwapFairValues);
+        if (r.VarianceSwapFairValues!.Count > 0)
+        {
+            var vs = r.VarianceSwapFairValues[0];
+            Assert.NotNull(vs.Expiry);
+            Assert.NotNull(vs.DaysToExpiry);
+            Assert.NotNull(vs.FairVariance);
+            Assert.NotNull(vs.FairVol);
+            Assert.NotNull(vs.AtmIv);
+            Assert.NotNull(vs.ConvexityAdjustment);
+        }
+
+        // greeks_surfaces — vanna/charm/volga/speed each a strike×expiry grid
+        Assert.NotNull(r.GreeksSurfaces);
+        foreach (var (g, name) in new[]
+        {
+            (r.GreeksSurfaces!.Vanna, "vanna"),
+            (r.GreeksSurfaces.Charm, "charm"),
+            (r.GreeksSurfaces.Volga, "volga"),
+            (r.GreeksSurfaces.Speed, "speed"),
+        })
+        {
+            Assert.True(g is not null, $"greeks_surfaces.{name} null");
+            Assert.NotNull(g!.Strikes);
+            Assert.NotNull(g.Expiries);
+            Assert.NotNull(g.Values);
+        }
+    }
+
+    [SkippableFact]
+    public async Task Surface_EveryFieldDeclaredInPocoMustBeReferenced()
+    {
+        Skip.IfNot(HasKey, SkipReason);
+        using var client = MakeClient();
+        var r = await client.SurfaceTypedAsync("SPY", SpyAt);
+        Assert.NotNull(r);
+
+        Assert.Equal("SPY", r!.Symbol);
+        Assert.NotNull(r.Spot);
+        Assert.NotNull(r.AsOf);
+        Assert.NotNull(r.GridSize);
+        Assert.NotNull(r.Tenors);
+        Assert.NotNull(r.Moneyness);
+        Assert.NotNull(r.Iv);
+        Assert.True(r.Iv!.Length > 0);
+        Assert.NotNull(r.Iv[0]);
+        Assert.NotNull(r.SlicesUsed);
+    }
+
+    [SkippableFact]
+    public async Task Gex_EveryFieldDeclaredInPocoMustBeReferenced()
+    {
+        Skip.IfNot(HasKey, SkipReason);
+        using var client = MakeClient();
+        var r = await client.GexTypedAsync("SPY", SpyAt);
+        Assert.NotNull(r);
+
+        Assert.Equal("SPY", r!.Symbol);
+        Assert.NotNull(r.UnderlyingPrice);
+        Assert.NotNull(r.AsOf);
+        Assert.NotNull(r.GammaFlip);
+        Assert.NotNull(r.NetGex);
+        Assert.NotNull(r.NetGexLabel);
+
+        Assert.NotNull(r.Strikes);
+        if (r.Strikes!.Count > 0)
+        {
+            var row = r.Strikes[0];
+            Assert.NotNull(row.Strike);
+            Assert.NotNull(row.CallGex);
+            Assert.NotNull(row.PutGex);
+            Assert.NotNull(row.NetGex);
+            Assert.NotNull(row.CallOi);
+            Assert.NotNull(row.PutOi);
+            // call_volume / put_volume are 0 placeholders on historical
+            Assert.NotNull(row.CallVolume);
+            Assert.NotNull(row.PutVolume);
+            // call_oi_change / put_oi_change documented null on historical
+        }
+    }
+
+    [SkippableFact]
+    public async Task Dex_EveryFieldDeclaredInPocoMustBeReferenced()
+    {
+        Skip.IfNot(HasKey, SkipReason);
+        using var client = MakeClient();
+        var r = await client.DexTypedAsync("SPY", SpyAt);
+        Assert.NotNull(r);
+
+        Assert.Equal("SPY", r!.Symbol);
+        Assert.NotNull(r.UnderlyingPrice);
+        Assert.NotNull(r.AsOf);
+        Assert.NotNull(r.NetDex);
+
+        Assert.NotNull(r.Strikes);
+        if (r.Strikes!.Count > 0)
+        {
+            var row = r.Strikes[0];
+            Assert.NotNull(row.Strike);
+            Assert.NotNull(row.CallDex);
+            Assert.NotNull(row.PutDex);
+            Assert.NotNull(row.NetDex);
+        }
+    }
+
+    [SkippableFact]
+    public async Task Vex_EveryFieldDeclaredInPocoMustBeReferenced()
+    {
+        Skip.IfNot(HasKey, SkipReason);
+        using var client = MakeClient();
+        var r = await client.VexTypedAsync("SPY", SpyAt);
+        Assert.NotNull(r);
+
+        Assert.Equal("SPY", r!.Symbol);
+        Assert.NotNull(r.UnderlyingPrice);
+        Assert.NotNull(r.AsOf);
+        Assert.NotNull(r.NetVex);
+        Assert.NotNull(r.VexInterpretation);
+
+        Assert.NotNull(r.Strikes);
+        if (r.Strikes!.Count > 0)
+        {
+            var row = r.Strikes[0];
+            Assert.NotNull(row.Strike);
+            Assert.NotNull(row.CallVex);
+            Assert.NotNull(row.PutVex);
+            Assert.NotNull(row.NetVex);
+        }
+    }
+
+    [SkippableFact]
+    public async Task Chex_EveryFieldDeclaredInPocoMustBeReferenced()
+    {
+        Skip.IfNot(HasKey, SkipReason);
+        using var client = MakeClient();
+        var r = await client.ChexTypedAsync("SPY", SpyAt);
+        Assert.NotNull(r);
+
+        Assert.Equal("SPY", r!.Symbol);
+        Assert.NotNull(r.UnderlyingPrice);
+        Assert.NotNull(r.AsOf);
+        Assert.NotNull(r.NetChex);
+        Assert.NotNull(r.ChexInterpretation);
+
+        Assert.NotNull(r.Strikes);
+        if (r.Strikes!.Count > 0)
+        {
+            var row = r.Strikes[0];
+            Assert.NotNull(row.Strike);
+            Assert.NotNull(row.CallChex);
+            Assert.NotNull(row.PutChex);
+            Assert.NotNull(row.NetChex);
+        }
+    }
 }
 
 // SkippableFact / Skip.IfNot are provided by the Xunit.SkippableFact NuGet package.

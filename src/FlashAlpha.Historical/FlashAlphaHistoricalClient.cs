@@ -170,6 +170,30 @@ public sealed class FlashAlphaHistoricalClient : IDisposable
         return GetAsync("/v1/tickers", p.Count > 0 ? p : null, ct);
     }
 
+    /// <summary>
+    /// Strongly-typed variant of <see cref="TickersAsync(string?, CancellationToken)"/> for
+    /// the <b>list</b> form (no <c>symbol</c> filter). Returns a <see cref="Models.TickersResponse"/>
+    /// POCO with per-symbol coverage rows. Use
+    /// <see cref="TickerTypedAsync(string, CancellationToken)"/> for the single-symbol form.
+    /// </summary>
+    public async Task<Models.TickersResponse?> TickersTypedAsync(CancellationToken ct = default)
+    {
+        var element = await TickersAsync(null, ct).ConfigureAwait(false);
+        return element.Deserialize<Models.TickersResponse>();
+    }
+
+    /// <summary>
+    /// Strongly-typed variant of <see cref="TickersAsync(string?, CancellationToken)"/> for
+    /// the <b>single-symbol</b> form (i.e. <c>?symbol=...</c>). Returns a
+    /// <see cref="Models.TickersSingleResponse"/> POCO with the symbol's coverage range
+    /// and healthy-day count.
+    /// </summary>
+    public async Task<Models.TickersSingleResponse?> TickerTypedAsync(string symbol, CancellationToken ct = default)
+    {
+        var element = await TickersAsync(symbol, ct).ConfigureAwait(false);
+        return element.Deserialize<Models.TickersSingleResponse>();
+    }
+
     // ── Market Data ───────────────────────────────────────────────────────────
 
     /// <summary>Stock bid/ask/mid/last at the requested minute.</summary>
@@ -384,6 +408,28 @@ public sealed class FlashAlphaHistoricalClient : IDisposable
         if (strikeRange.HasValue) p["strike_range"] = D(strikeRange.Value);
         return GetAsync($"/v1/exposure/zero-dte/{Seg(symbol)}", p, ct);
     }
+
+    /// <inheritdoc cref="ZeroDteAsync(string, string, double?, CancellationToken)"/>
+    public Task<JsonElement> ZeroDteAsync(string symbol, DateTime at, double? strikeRange = null, CancellationToken ct = default)
+        => ZeroDteAsync(symbol, FormatAt(at), strikeRange, ct);
+
+    /// <summary>
+    /// Strongly-typed variant of <see cref="ZeroDteAsync(string, string, double?, CancellationToken)"/>.
+    /// Returns a <see cref="Models.ZeroDteResponse"/> POCO with the full 0DTE analytics
+    /// shape: regime, exposures, expected move, pin risk, hedging buckets, decay,
+    /// vol context, flow, levels, liquidity, metadata, and the per-strike grid.
+    /// The original <see cref="ZeroDteAsync(string, string, double?, CancellationToken)"/>
+    /// remains unchanged.
+    /// </summary>
+    public async Task<Models.ZeroDteResponse?> ZeroDteTypedAsync(string symbol, string at, double? strikeRange = null, CancellationToken ct = default)
+    {
+        var element = await ZeroDteAsync(symbol, at, strikeRange, ct).ConfigureAwait(false);
+        return element.Deserialize<Models.ZeroDteResponse>();
+    }
+
+    /// <inheritdoc cref="ZeroDteTypedAsync(string, string, double?, CancellationToken)"/>
+    public Task<Models.ZeroDteResponse?> ZeroDteTypedAsync(string symbol, DateTime at, double? strikeRange = null, CancellationToken ct = default)
+        => ZeroDteTypedAsync(symbol, FormatAt(at), strikeRange, ct);
 
     // ── Max Pain ──────────────────────────────────────────────────────────────
 
