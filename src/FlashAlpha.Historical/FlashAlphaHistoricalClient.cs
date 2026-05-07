@@ -202,6 +202,21 @@ public sealed class FlashAlphaHistoricalClient : IDisposable
     public Task<JsonElement> SurfaceAsync(string symbol, DateTime at, CancellationToken ct = default)
         => SurfaceAsync(symbol, FormatAt(at), ct);
 
+    /// <summary>
+    /// Strongly-typed variant of <see cref="SurfaceAsync(string, string, CancellationToken)"/>.
+    /// Returns a <see cref="Models.SurfaceResponse"/> POCO. The original
+    /// <see cref="SurfaceAsync(string, string, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<Models.SurfaceResponse?> SurfaceTypedAsync(string symbol, string at, CancellationToken ct = default)
+    {
+        var element = await SurfaceAsync(symbol, at, ct).ConfigureAwait(false);
+        return element.Deserialize<Models.SurfaceResponse>();
+    }
+
+    /// <inheritdoc cref="SurfaceTypedAsync(string, string, CancellationToken)"/>
+    public Task<Models.SurfaceResponse?> SurfaceTypedAsync(string symbol, DateTime at, CancellationToken ct = default)
+        => SurfaceTypedAsync(symbol, FormatAt(at), ct);
+
     // ── Exposure ──────────────────────────────────────────────────────────────
 
     /// <summary>Gamma exposure by strike.</summary>
@@ -217,6 +232,22 @@ public sealed class FlashAlphaHistoricalClient : IDisposable
     public Task<JsonElement> GexAsync(string symbol, DateTime at, string? expiration = null, int? minOi = null, CancellationToken ct = default)
         => GexAsync(symbol, FormatAt(at), expiration, minOi, ct);
 
+    /// <summary>
+    /// Strongly-typed variant of <see cref="GexAsync(string, string, string?, int?, CancellationToken)"/>.
+    /// Returns a <see cref="Models.GexResponse"/> POCO with per-strike GEX rows plus
+    /// gamma flip and net GEX label. The original
+    /// <see cref="GexAsync(string, string, string?, int?, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<Models.GexResponse?> GexTypedAsync(string symbol, string at, string? expiration = null, int? minOi = null, CancellationToken ct = default)
+    {
+        var element = await GexAsync(symbol, at, expiration, minOi, ct).ConfigureAwait(false);
+        return element.Deserialize<Models.GexResponse>();
+    }
+
+    /// <inheritdoc cref="GexTypedAsync(string, string, string?, int?, CancellationToken)"/>
+    public Task<Models.GexResponse?> GexTypedAsync(string symbol, DateTime at, string? expiration = null, int? minOi = null, CancellationToken ct = default)
+        => GexTypedAsync(symbol, FormatAt(at), expiration, minOi, ct);
+
     /// <summary>Delta exposure by strike.</summary>
     public Task<JsonElement> DexAsync(string symbol, string at, string? expiration = null, CancellationToken ct = default)
     {
@@ -224,6 +255,20 @@ public sealed class FlashAlphaHistoricalClient : IDisposable
         if (expiration is not null) p["expiration"] = expiration;
         return GetAsync($"/v1/exposure/dex/{Seg(symbol)}", p, ct);
     }
+
+    /// <summary>
+    /// Strongly-typed variant of <see cref="DexAsync(string, string, string?, CancellationToken)"/>.
+    /// Returns a <see cref="Models.DexResponse"/> POCO with per-strike DEX rows plus net DEX.
+    /// </summary>
+    public async Task<Models.DexResponse?> DexTypedAsync(string symbol, string at, string? expiration = null, CancellationToken ct = default)
+    {
+        var element = await DexAsync(symbol, at, expiration, ct).ConfigureAwait(false);
+        return element.Deserialize<Models.DexResponse>();
+    }
+
+    /// <inheritdoc cref="DexTypedAsync(string, string, string?, CancellationToken)"/>
+    public Task<Models.DexResponse?> DexTypedAsync(string symbol, DateTime at, string? expiration = null, CancellationToken ct = default)
+        => DexTypedAsync(symbol, FormatAt(at), expiration, ct);
 
     /// <summary>Vanna exposure by strike.</summary>
     public Task<JsonElement> VexAsync(string symbol, string at, string? expiration = null, CancellationToken ct = default)
@@ -233,6 +278,21 @@ public sealed class FlashAlphaHistoricalClient : IDisposable
         return GetAsync($"/v1/exposure/vex/{Seg(symbol)}", p, ct);
     }
 
+    /// <summary>
+    /// Strongly-typed variant of <see cref="VexAsync(string, string, string?, CancellationToken)"/>.
+    /// Returns a <see cref="Models.VexResponse"/> POCO with per-strike VEX rows plus net VEX
+    /// and a textual interpretation.
+    /// </summary>
+    public async Task<Models.VexResponse?> VexTypedAsync(string symbol, string at, string? expiration = null, CancellationToken ct = default)
+    {
+        var element = await VexAsync(symbol, at, expiration, ct).ConfigureAwait(false);
+        return element.Deserialize<Models.VexResponse>();
+    }
+
+    /// <inheritdoc cref="VexTypedAsync(string, string, string?, CancellationToken)"/>
+    public Task<Models.VexResponse?> VexTypedAsync(string symbol, DateTime at, string? expiration = null, CancellationToken ct = default)
+        => VexTypedAsync(symbol, FormatAt(at), expiration, ct);
+
     /// <summary>Charm exposure by strike.</summary>
     public Task<JsonElement> ChexAsync(string symbol, string at, string? expiration = null, CancellationToken ct = default)
     {
@@ -240,6 +300,21 @@ public sealed class FlashAlphaHistoricalClient : IDisposable
         if (expiration is not null) p["expiration"] = expiration;
         return GetAsync($"/v1/exposure/chex/{Seg(symbol)}", p, ct);
     }
+
+    /// <summary>
+    /// Strongly-typed variant of <see cref="ChexAsync(string, string, string?, CancellationToken)"/>.
+    /// Returns a <see cref="Models.ChexResponse"/> POCO with per-strike CHEX rows plus net CHEX
+    /// and a textual interpretation.
+    /// </summary>
+    public async Task<Models.ChexResponse?> ChexTypedAsync(string symbol, string at, string? expiration = null, CancellationToken ct = default)
+    {
+        var element = await ChexAsync(symbol, at, expiration, ct).ConfigureAwait(false);
+        return element.Deserialize<Models.ChexResponse>();
+    }
+
+    /// <inheritdoc cref="ChexTypedAsync(string, string, string?, CancellationToken)"/>
+    public Task<Models.ChexResponse?> ChexTypedAsync(string symbol, DateTime at, string? expiration = null, CancellationToken ct = default)
+        => ChexTypedAsync(symbol, FormatAt(at), expiration, ct);
 
     /// <summary>Full composite exposure dashboard — net GEX/DEX/VEX/CHEX, gamma flip, regime, ±1% hedging, 0DTE contribution.</summary>
     public Task<JsonElement> ExposureSummaryAsync(string symbol, string at, CancellationToken ct = default)
@@ -367,9 +442,51 @@ public sealed class FlashAlphaHistoricalClient : IDisposable
     public Task<JsonElement> VolatilityAsync(string symbol, string at, CancellationToken ct = default)
         => GetAsync($"/v1/volatility/{Seg(symbol)}", new() { ["at"] = at }, ct);
 
+    /// <inheritdoc cref="VolatilityAsync(string, string, CancellationToken)"/>
+    public Task<JsonElement> VolatilityAsync(string symbol, DateTime at, CancellationToken ct = default)
+        => VolatilityAsync(symbol, FormatAt(at), ct);
+
+    /// <summary>
+    /// Strongly-typed variant of <see cref="VolatilityAsync(string, string, CancellationToken)"/>.
+    /// Returns a <see cref="Models.VolatilityResponse"/> POCO with realized-vol ladder, IV-RV
+    /// spreads, skew profiles, term structure, GEX/theta-by-DTE, put/call profile, OI
+    /// concentration, hedging scenarios, and liquidity. The original
+    /// <see cref="VolatilityAsync(string, string, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<Models.VolatilityResponse?> VolatilityTypedAsync(string symbol, string at, CancellationToken ct = default)
+    {
+        var element = await VolatilityAsync(symbol, at, ct).ConfigureAwait(false);
+        return element.Deserialize<Models.VolatilityResponse>();
+    }
+
+    /// <inheritdoc cref="VolatilityTypedAsync(string, string, CancellationToken)"/>
+    public Task<Models.VolatilityResponse?> VolatilityTypedAsync(string symbol, DateTime at, CancellationToken ct = default)
+        => VolatilityTypedAsync(symbol, FormatAt(at), ct);
+
     /// <summary>SVI parameters, forward prices, total variance surface, arbitrage flags, variance swap fairs.</summary>
     public Task<JsonElement> AdvVolatilityAsync(string symbol, string at, CancellationToken ct = default)
         => GetAsync($"/v1/adv_volatility/{Seg(symbol)}", new() { ["at"] = at }, ct);
+
+    /// <inheritdoc cref="AdvVolatilityAsync(string, string, CancellationToken)"/>
+    public Task<JsonElement> AdvVolatilityAsync(string symbol, DateTime at, CancellationToken ct = default)
+        => AdvVolatilityAsync(symbol, FormatAt(at), ct);
+
+    /// <summary>
+    /// Strongly-typed variant of <see cref="AdvVolatilityAsync(string, string, CancellationToken)"/>.
+    /// Returns an <see cref="Models.AdvVolatilityResponse"/> POCO covering SVI parameter sets,
+    /// forward prices, total variance surface, arbitrage flags, variance swap fair values,
+    /// and second-/third-order greek surfaces. The original
+    /// <see cref="AdvVolatilityAsync(string, string, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<Models.AdvVolatilityResponse?> AdvVolatilityTypedAsync(string symbol, string at, CancellationToken ct = default)
+    {
+        var element = await AdvVolatilityAsync(symbol, at, ct).ConfigureAwait(false);
+        return element.Deserialize<Models.AdvVolatilityResponse>();
+    }
+
+    /// <inheritdoc cref="AdvVolatilityTypedAsync(string, string, CancellationToken)"/>
+    public Task<Models.AdvVolatilityResponse?> AdvVolatilityTypedAsync(string symbol, DateTime at, CancellationToken ct = default)
+        => AdvVolatilityTypedAsync(symbol, FormatAt(at), ct);
 
     // ── VRP ───────────────────────────────────────────────────────────────────
 
