@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using FlashAlpha.Historical.Models;
 using Xunit;
 
 namespace FlashAlpha.Historical.Tests;
@@ -21,7 +22,7 @@ public class IntegrationTests
     private const double SpotTol = 1.0;
 
     private static readonly HashSet<string> Regimes =
-        new() { "positive_gamma", "negative_gamma", "neutral", "undetermined" };
+        new() { "positive_gamma", "negative_gamma", "unknown" };
 
     private static readonly string? ApiKey = Environment.GetEnvironmentVariable("FLASHALPHA_API_KEY");
 
@@ -429,7 +430,7 @@ public class IntegrationTests
         Assert.Equal(JsonValueKind.String, r.GetProperty("expiration").ValueKind);
         Assert.Equal(JsonValueKind.Number, r.GetProperty("put_call_oi_ratio").ValueKind);
         Assert.Contains(r.GetProperty("regime").GetString(),
-            new[] { "positive_gamma", "negative_gamma", "neutral", "undetermined" });
+            new[] { "positive_gamma", "negative_gamma", "unknown" });
         var pin = r.GetProperty("pin_probability").GetInt32();
         Assert.InRange(pin, 0, 100);
 
@@ -609,6 +610,203 @@ public class IntegrationTests
             var output = (dynamic)r.Output!;
             Assert.Contains((string)output.Regime, Regimes);
         }
+    }
+
+    // ── rc.4 typed-POCO field-walk coverage ──────────────────────────────────
+    //
+    // Each test below deserializes a historical response into the matching
+    // typed POCO and asserts every property is non-null. A renamed/deleted
+    // JsonPropertyName will surface immediately as a NotNull failure.
+    //
+    // Historical-specific gaps documented in StockSummary docs are honoured:
+    //   - options_flow volume fields are 0 placeholders → pc_ratio_volume null
+    //   - macro.vix_futures / macro.fear_and_greed are null on historical
+
+    [SkippableFact]
+    public async Task StockSummary_EveryFieldDeclaredInPocoMustBeReferenced()
+    {
+        Skip.IfNot(HasKey, SkipReason);
+        using var client = MakeClient();
+        var elem = await client.StockSummaryAsync("SPY", SpyAt);
+        var r = JsonSerializer.Deserialize<StockSummaryResponse>(elem);
+        Assert.NotNull(r);
+
+        // top-level
+        Assert.Equal("SPY", r!.Symbol);
+        Assert.NotNull(r.AsOf);
+        Assert.NotNull(r.MarketOpen);
+
+        // price
+        Assert.NotNull(r.Price);
+        Assert.NotNull(r.Price!.Bid);
+        Assert.NotNull(r.Price.Ask);
+        Assert.NotNull(r.Price.Mid);
+        Assert.NotNull(r.Price.Last);
+        Assert.NotNull(r.Price.LastUpdate);
+
+        // volatility
+        Assert.NotNull(r.Volatility);
+        Assert.NotNull(r.Volatility!.AtmIv);
+        Assert.NotNull(r.Volatility.Hv20);
+        Assert.NotNull(r.Volatility.Hv60);
+        Assert.NotNull(r.Volatility.Vrp);
+        Assert.NotNull(r.Volatility.Skew25d);
+        Assert.NotNull(r.Volatility.Skew25d!.Expiry);
+        Assert.NotNull(r.Volatility.Skew25d.DaysToExpiry);
+        Assert.NotNull(r.Volatility.Skew25d.Put25dIv);
+        Assert.NotNull(r.Volatility.Skew25d.AtmIv);
+        Assert.NotNull(r.Volatility.Skew25d.Call25dIv);
+        Assert.NotNull(r.Volatility.Skew25d.Skew25dValue);
+        Assert.NotNull(r.Volatility.Skew25d.SmileRatio);
+        Assert.NotNull(r.Volatility.IvTermStructure);
+        if (r.Volatility.IvTermStructure!.Count > 0)
+        {
+            var t = r.Volatility.IvTermStructure[0];
+            Assert.NotNull(t.Expiry);
+            Assert.NotNull(t.Iv);
+            Assert.NotNull(t.DaysToExpiry);
+        }
+
+        // options_flow — historical: volume fields are 0 placeholders, so
+        // pc_ratio_volume is null
+        Assert.NotNull(r.OptionsFlow);
+        Assert.NotNull(r.OptionsFlow!.TotalCallOi);
+        Assert.NotNull(r.OptionsFlow.TotalPutOi);
+        Assert.NotNull(r.OptionsFlow.TotalCallVolume);
+        Assert.NotNull(r.OptionsFlow.TotalPutVolume);
+        Assert.NotNull(r.OptionsFlow.PcRatioOi);
+        // pc_ratio_volume nullable on historical (volumes are 0)
+        Assert.NotNull(r.OptionsFlow.ActiveExpirations);
+
+        // exposure
+        Assert.NotNull(r.Exposure);
+        Assert.NotNull(r.Exposure!.NetGex);
+        Assert.NotNull(r.Exposure.NetDex);
+        Assert.NotNull(r.Exposure.NetVex);
+        Assert.NotNull(r.Exposure.NetChex);
+        Assert.NotNull(r.Exposure.GammaFlip);
+        Assert.NotNull(r.Exposure.CallWall);
+        Assert.NotNull(r.Exposure.PutWall);
+        Assert.NotNull(r.Exposure.MaxPain);
+        Assert.NotNull(r.Exposure.HighestOiStrike);
+        Assert.NotNull(r.Exposure.Regime);
+        Assert.Contains(r.Exposure.Regime, Regimes);
+        Assert.NotNull(r.Exposure.Interpretation);
+        Assert.NotNull(r.Exposure.Interpretation!.Gamma);
+        Assert.NotNull(r.Exposure.Interpretation.Vanna);
+        Assert.NotNull(r.Exposure.Interpretation.Charm);
+        Assert.NotNull(r.Exposure.HedgingEstimate);
+        Assert.NotNull(r.Exposure.HedgingEstimate!.SpotDown1Pct);
+        Assert.NotNull(r.Exposure.HedgingEstimate.SpotDown1Pct!.DealerShares);
+        Assert.NotNull(r.Exposure.HedgingEstimate.SpotDown1Pct.Direction);
+        Assert.NotNull(r.Exposure.HedgingEstimate.SpotDown1Pct.NotionalUsd);
+        Assert.NotNull(r.Exposure.HedgingEstimate.SpotUp1Pct);
+        Assert.NotNull(r.Exposure.HedgingEstimate.SpotUp1Pct!.DealerShares);
+        Assert.NotNull(r.Exposure.HedgingEstimate.SpotUp1Pct.Direction);
+        Assert.NotNull(r.Exposure.HedgingEstimate.SpotUp1Pct.NotionalUsd);
+        Assert.NotNull(r.Exposure.ZeroDte);
+        Assert.NotNull(r.Exposure.ZeroDte!.NetGex);
+        Assert.NotNull(r.Exposure.ZeroDte.PctOfTotal);
+        // expiration may be null when the requested minute had no 0DTE expiry
+        Assert.NotNull(r.Exposure.TopStrikes);
+        if (r.Exposure.TopStrikes!.Count > 0)
+        {
+            var ts = r.Exposure.TopStrikes[0];
+            Assert.NotNull(ts.Strike);
+            Assert.NotNull(ts.NetGex);
+            Assert.NotNull(ts.CallOi);
+            Assert.NotNull(ts.PutOi);
+            Assert.NotNull(ts.TotalOi);
+        }
+        Assert.NotNull(r.Exposure.OiWeightedDte);
+
+        // macro — historical: vix_futures / fear_and_greed are null;
+        // the value/change/change_pct macro quotes are populated.
+        Assert.NotNull(r.Macro);
+        foreach (var (q, name) in new[]
+        {
+            (r.Macro!.Vix, "vix"), (r.Macro.Vvix, "vvix"),
+            (r.Macro.Skew, "skew"), (r.Macro.Spx, "spx"), (r.Macro.Move, "move"),
+        })
+        {
+            if (q is null) continue; // best-effort per docs
+            Assert.True(q.Value is not null, $"macro.{name}.value null");
+            Assert.True(q.Change is not null, $"macro.{name}.change null");
+            Assert.True(q.ChangePct is not null, $"macro.{name}.change_pct null");
+        }
+        if (r.Macro.VixTermStructure is not null)
+        {
+            Assert.NotNull(r.Macro.VixTermStructure.Levels);
+            Assert.NotNull(r.Macro.VixTermStructure.Levels!.Vix9d);
+            Assert.NotNull(r.Macro.VixTermStructure.Levels.Vix);
+            Assert.NotNull(r.Macro.VixTermStructure.Levels.Vix3m);
+            Assert.NotNull(r.Macro.VixTermStructure.Levels.Vix6m);
+            Assert.NotNull(r.Macro.VixTermStructure.NearSlopePct);
+            Assert.NotNull(r.Macro.VixTermStructure.Structure);
+        }
+        // vix_futures and fear_and_greed are null on historical — documented
+    }
+
+    [SkippableFact]
+    public async Task Narrative_EveryFieldDeclaredInPocoMustBeReferenced()
+    {
+        Skip.IfNot(HasKey, SkipReason);
+        using var client = MakeClient();
+        var elem = await client.NarrativeAsync("SPY", SpyAt);
+        var r = JsonSerializer.Deserialize<NarrativeResponse>(elem);
+        Assert.NotNull(r);
+
+        Assert.Equal("SPY", r!.Symbol);
+        Assert.NotNull(r.UnderlyingPrice);
+        Assert.NotNull(r.AsOf);
+        Assert.NotNull(r.Narrative);
+        Assert.NotNull(r.Narrative!.Regime);
+        Assert.NotNull(r.Narrative.GexChange);
+        Assert.NotNull(r.Narrative.KeyLevels);
+        Assert.NotNull(r.Narrative.Flow);
+        Assert.NotNull(r.Narrative.Vanna);
+        Assert.NotNull(r.Narrative.Charm);
+        Assert.NotNull(r.Narrative.ZeroDte);
+        Assert.NotNull(r.Narrative.Outlook);
+
+        Assert.NotNull(r.Narrative.Data);
+        var d = r.Narrative.Data!;
+        Assert.NotNull(d.NetGex);
+        Assert.NotNull(d.NetGexPrior);
+        Assert.NotNull(d.NetGexChangePct);
+        Assert.NotNull(d.Vix);
+        Assert.NotNull(d.GammaFlip);
+        Assert.NotNull(d.CallWall);
+        Assert.NotNull(d.PutWall);
+        Assert.NotNull(d.Regime);
+        Assert.Contains(d.Regime, Regimes);
+        Assert.NotNull(d.ZeroDtePct);
+        // top_oi_changes is empty on historical (no intraday volume) but the
+        // list itself must be non-null and walkable
+        Assert.NotNull(d.TopOiChanges);
+    }
+
+    [SkippableFact]
+    public async Task ExposureLevels_EveryFieldDeclaredInPocoMustBeReferenced()
+    {
+        Skip.IfNot(HasKey, SkipReason);
+        using var client = MakeClient();
+        var elem = await client.ExposureLevelsAsync("SPY", SpyAt);
+        var r = JsonSerializer.Deserialize<ExposureLevelsResponse>(elem);
+        Assert.NotNull(r);
+
+        Assert.Equal("SPY", r!.Symbol);
+        Assert.NotNull(r.UnderlyingPrice);
+        Assert.NotNull(r.AsOf);
+        Assert.NotNull(r.Levels);
+        Assert.NotNull(r.Levels!.GammaFlip);
+        Assert.NotNull(r.Levels.MaxPositiveGamma);
+        Assert.NotNull(r.Levels.MaxNegativeGamma);
+        Assert.NotNull(r.Levels.CallWall);
+        Assert.NotNull(r.Levels.PutWall);
+        Assert.NotNull(r.Levels.HighestOiStrike);
+        // ZeroDteMagnet — explicit assertion was missing in Levels_KeysPresent
+        Assert.NotNull(r.Levels.ZeroDteMagnet);
     }
 }
 

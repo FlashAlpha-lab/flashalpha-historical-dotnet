@@ -106,7 +106,7 @@ public sealed class NarrativeData
     [JsonPropertyName("put_wall")]
     public double? PutWall { get; set; }
 
-    /// <summary><c>"positive_gamma"</c> | <c>"negative_gamma"</c> | <c>"neutral"</c> | <c>"undetermined"</c>.</summary>
+    /// <summary><c>"positive_gamma"</c> | <c>"negative_gamma"</c> | <c>"unknown"</c>.</summary>
     [JsonPropertyName("regime")]
     public string? Regime { get; set; }
 
