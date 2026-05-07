@@ -249,13 +249,58 @@ public sealed class FlashAlphaHistoricalClient : IDisposable
     public Task<JsonElement> ExposureSummaryAsync(string symbol, DateTime at, CancellationToken ct = default)
         => ExposureSummaryAsync(symbol, FormatAt(at), ct);
 
+    /// <summary>
+    /// Strongly-typed variant of <see cref="ExposureSummaryAsync(string, string, CancellationToken)"/>.
+    /// Returns a <see cref="Models.ExposureSummaryResponse"/> POCO. The original
+    /// <see cref="ExposureSummaryAsync(string, string, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<Models.ExposureSummaryResponse?> ExposureSummaryTypedAsync(string symbol, string at, CancellationToken ct = default)
+    {
+        var element = await ExposureSummaryAsync(symbol, at, ct).ConfigureAwait(false);
+        return element.Deserialize<Models.ExposureSummaryResponse>();
+    }
+
+    /// <inheritdoc cref="ExposureSummaryTypedAsync(string, string, CancellationToken)"/>
+    public Task<Models.ExposureSummaryResponse?> ExposureSummaryTypedAsync(string symbol, DateTime at, CancellationToken ct = default)
+        => ExposureSummaryTypedAsync(symbol, FormatAt(at), ct);
+
     /// <summary>Key technical levels — gamma flip, walls, max +/- gamma, highest-OI, 0DTE magnet.</summary>
     public Task<JsonElement> ExposureLevelsAsync(string symbol, string at, CancellationToken ct = default)
         => GetAsync($"/v1/exposure/levels/{Seg(symbol)}", new() { ["at"] = at }, ct);
 
+    /// <summary>
+    /// Strongly-typed variant of <see cref="ExposureLevelsAsync(string, string, CancellationToken)"/>.
+    /// Returns a <see cref="Models.ExposureLevelsResponse"/> POCO. The original
+    /// <see cref="ExposureLevelsAsync(string, string, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<Models.ExposureLevelsResponse?> ExposureLevelsTypedAsync(string symbol, string at, CancellationToken ct = default)
+    {
+        var element = await ExposureLevelsAsync(symbol, at, ct).ConfigureAwait(false);
+        return element.Deserialize<Models.ExposureLevelsResponse>();
+    }
+
+    /// <inheritdoc cref="ExposureLevelsTypedAsync(string, string, CancellationToken)"/>
+    public Task<Models.ExposureLevelsResponse?> ExposureLevelsTypedAsync(string symbol, DateTime at, CancellationToken ct = default)
+        => ExposureLevelsTypedAsync(symbol, FormatAt(at), ct);
+
     /// <summary>Verbal analysis + prior-day GEX comparison + VIX context. <c>top_oi_changes</c> always empty.</summary>
     public Task<JsonElement> NarrativeAsync(string symbol, string at, CancellationToken ct = default)
         => GetAsync($"/v1/exposure/narrative/{Seg(symbol)}", new() { ["at"] = at }, ct);
+
+    /// <summary>
+    /// Strongly-typed variant of <see cref="NarrativeAsync(string, string, CancellationToken)"/>.
+    /// Returns a <see cref="Models.NarrativeResponse"/> POCO. The original
+    /// <see cref="NarrativeAsync(string, string, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<Models.NarrativeResponse?> NarrativeTypedAsync(string symbol, string at, CancellationToken ct = default)
+    {
+        var element = await NarrativeAsync(symbol, at, ct).ConfigureAwait(false);
+        return element.Deserialize<Models.NarrativeResponse>();
+    }
+
+    /// <inheritdoc cref="NarrativeTypedAsync(string, string, CancellationToken)"/>
+    public Task<Models.NarrativeResponse?> NarrativeTypedAsync(string symbol, DateTime at, CancellationToken ct = default)
+        => NarrativeTypedAsync(symbol, FormatAt(at), ct);
 
     /// <summary>0DTE-specific analytics — regime, expected move, pin risk, hedging, decay, flow.</summary>
     public Task<JsonElement> ZeroDteAsync(string symbol, string at, double? strikeRange = null, CancellationToken ct = default)
@@ -275,6 +320,22 @@ public sealed class FlashAlphaHistoricalClient : IDisposable
         return GetAsync($"/v1/maxpain/{Seg(symbol)}", p, ct);
     }
 
+    /// <summary>
+    /// Strongly-typed variant of <see cref="MaxPainAsync(string, string, string?, CancellationToken)"/>.
+    /// Returns a <see cref="Models.MaxPainResponse"/> POCO with the pain curve, dealer alignment,
+    /// expected move, and pin probability. The original
+    /// <see cref="MaxPainAsync(string, string, string?, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<Models.MaxPainResponse?> MaxPainTypedAsync(string symbol, string at, string? expiration = null, CancellationToken ct = default)
+    {
+        var element = await MaxPainAsync(symbol, at, expiration, ct).ConfigureAwait(false);
+        return element.Deserialize<Models.MaxPainResponse>();
+    }
+
+    /// <inheritdoc cref="MaxPainTypedAsync(string, string, string?, CancellationToken)"/>
+    public Task<Models.MaxPainResponse?> MaxPainTypedAsync(string symbol, DateTime at, string? expiration = null, CancellationToken ct = default)
+        => MaxPainTypedAsync(symbol, FormatAt(at), expiration, ct);
+
     // ── Composite ─────────────────────────────────────────────────────────────
 
     /// <summary>Full composite snapshot — price, vol, options flow, exposure, macro.</summary>
@@ -284,6 +345,21 @@ public sealed class FlashAlphaHistoricalClient : IDisposable
     /// <inheritdoc cref="StockSummaryAsync(string, string, CancellationToken)"/>
     public Task<JsonElement> StockSummaryAsync(string symbol, DateTime at, CancellationToken ct = default)
         => StockSummaryAsync(symbol, FormatAt(at), ct);
+
+    /// <summary>
+    /// Strongly-typed variant of <see cref="StockSummaryAsync(string, string, CancellationToken)"/>.
+    /// Returns a <see cref="Models.StockSummaryResponse"/> POCO. The original
+    /// <see cref="StockSummaryAsync(string, string, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<Models.StockSummaryResponse?> StockSummaryTypedAsync(string symbol, string at, CancellationToken ct = default)
+    {
+        var element = await StockSummaryAsync(symbol, at, ct).ConfigureAwait(false);
+        return element.Deserialize<Models.StockSummaryResponse>();
+    }
+
+    /// <inheritdoc cref="StockSummaryTypedAsync(string, string, CancellationToken)"/>
+    public Task<Models.StockSummaryResponse?> StockSummaryTypedAsync(string symbol, DateTime at, CancellationToken ct = default)
+        => StockSummaryTypedAsync(symbol, FormatAt(at), ct);
 
     // ── Volatility ────────────────────────────────────────────────────────────
 
@@ -304,6 +380,22 @@ public sealed class FlashAlphaHistoricalClient : IDisposable
     /// <inheritdoc cref="VrpAsync(string, string, CancellationToken)"/>
     public Task<JsonElement> VrpAsync(string symbol, DateTime at, CancellationToken ct = default)
         => VrpAsync(symbol, FormatAt(at), ct);
+
+    /// <summary>
+    /// Strongly-typed variant of <see cref="VrpAsync(string, string, CancellationToken)"/>.
+    /// Returns a <see cref="Models.VrpResponse"/> POCO covering core VRP metrics, directional
+    /// skew, gamma-regime conditioning, regime snapshot, strategy scores, and term-VRP series.
+    /// The original <see cref="VrpAsync(string, string, CancellationToken)"/> remains unchanged.
+    /// </summary>
+    public async Task<Models.VrpResponse?> VrpTypedAsync(string symbol, string at, CancellationToken ct = default)
+    {
+        var element = await VrpAsync(symbol, at, ct).ConfigureAwait(false);
+        return element.Deserialize<Models.VrpResponse>();
+    }
+
+    /// <inheritdoc cref="VrpTypedAsync(string, string, CancellationToken)"/>
+    public Task<Models.VrpResponse?> VrpTypedAsync(string symbol, DateTime at, CancellationToken ct = default)
+        => VrpTypedAsync(symbol, FormatAt(at), ct);
 
     // ── IDisposable ───────────────────────────────────────────────────────────
 
