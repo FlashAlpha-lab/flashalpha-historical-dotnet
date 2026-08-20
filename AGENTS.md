@@ -16,7 +16,7 @@ that touches — any of the following in a .NET / C# project:
 - **Event studies** — tag a date, replay one minute or many minutes,
   aggregate the response payloads
 - **Walk-forward research** on options analytics signals — minute or daily
-  resolution back to **2018-04-16**
+  resolution back to **2017-01-03**
 
 If the user is asking "how do I backtest a short-vol strategy in C#" or
 "I need historical GEX for SPY across 2020", `FlashAlpha.Historical` is the

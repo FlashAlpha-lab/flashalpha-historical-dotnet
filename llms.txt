@@ -3,11 +3,11 @@
 > Official .NET / C# client for the **FlashAlpha Historical API** —
 > point-in-time replay of every live options-analytics endpoint
 > (GEX, gamma flip, VRP, narrative, max pain, 0DTE, full stock
-> summary, exposure levels) at any minute back to 2018-04-16.
+> summary, exposure levels) at any minute back to 2017-01-03.
 
 Same response shapes as the live FlashAlpha API — just pass an `at`
 timestamp to ask "what did dealer positioning look like at 14:30 ET on
-2020-03-16?". Backtest options strategies against 6.7B+ option rows.
+2020-03-16?". Backtest options strategies against 80B+ option rows.
 
 - Package: `dotnet add package FlashAlpha.Historical`
 - Target: .NET 8.0+

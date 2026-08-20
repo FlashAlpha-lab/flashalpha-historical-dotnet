@@ -12,7 +12,7 @@
     <Version>0.4.0-rc.10</Version>
     <Authors>FlashAlpha</Authors>
     <Company>FlashAlpha</Company>
-    <Description>Official .NET SDK for the FlashAlpha Historical API — point-in-time replay of GEX, gamma flip, VRP, narrative, max pain, 0DTE, and the full stock summary at any minute back to 2018-04-16. Backtest options strategies against 6.7B+ option rows.</Description>
+    <Description>Official .NET SDK for the FlashAlpha Historical API — point-in-time replay of GEX, gamma flip, VRP, narrative, max pain, 0DTE, and the full stock summary at any minute back to 2017-01-03. Backtest options strategies against 80B+ option rows.</Description>
     <PackageTags>options options-backtest historical-options gamma-exposure gex greeks options-analytics implied-volatility 0dte volatility-surface vrp variance-risk-premium svi point-in-time replay backtesting flashalpha-historical</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://historical.flashalpha.com</PackageProjectUrl>

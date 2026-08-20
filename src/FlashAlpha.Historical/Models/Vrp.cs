@@ -24,7 +24,7 @@ namespace FlashAlpha.Historical.Models;
 /// </list></para>
 ///
 /// <para>On historical responses with insufficient warm-up (<c>at</c> near
-/// 2018-04-16), <c>Vrp.ZScore</c>, <c>Vrp.Percentile</c>,
+/// 2017-01-03), <c>Vrp.ZScore</c>, <c>Vrp.Percentile</c>,
 /// <c>Regime.VrpRegime</c>, <c>StrategyScores</c>, and <c>NetHarvestScore</c>
 /// are all <c>null</c>. <c>Warnings</c> will explain.</para>
 ///
