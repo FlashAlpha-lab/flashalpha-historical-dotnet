@@ -47,7 +47,7 @@ namespace FlashAlpha.Historical.Models;
 /// </list>
 /// </para>
 /// </summary>
-public sealed class ZeroDteResponse
+public sealed class ZeroDteResponse : FlashAlphaResponse
 {
     /// <summary>Echoed from the request path (e.g. <c>"SPY"</c>, <c>"SPX"</c>, <c>"QQQ"</c>).</summary>
     [JsonPropertyName("symbol")]

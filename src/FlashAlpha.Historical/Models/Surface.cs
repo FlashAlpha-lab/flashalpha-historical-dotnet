@@ -15,7 +15,7 @@ namespace FlashAlpha.Historical.Models;
 /// <para>On sparse historical days the API may return
 /// <see cref="InsufficientDataException"/> rather than a partial surface.</para>
 /// </summary>
-public sealed class SurfaceResponse
+public sealed class SurfaceResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }

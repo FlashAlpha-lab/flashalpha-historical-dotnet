@@ -23,7 +23,7 @@ namespace FlashAlpha.Historical.Models;
 /// snapped to the available minute, may not equal the <c>at</c> request
 /// value.</para>
 /// </summary>
-public sealed class NarrativeResponse
+public sealed class NarrativeResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }

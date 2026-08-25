@@ -19,7 +19,7 @@ namespace FlashAlpha.Historical.Models;
 /// <para>Sister endpoints DEX / VEX / CHEX share the same response shape — see
 /// <see cref="DexResponse"/>, <see cref="VexResponse"/>, and <see cref="ChexResponse"/>.</para>
 /// </summary>
-public sealed class GexResponse
+public sealed class GexResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
@@ -83,7 +83,7 @@ public sealed class GexStrikeRow
 }
 
 /// <summary>Typed response model for <c>GET /v1/exposure/dex/{symbol}?at=...</c>.</summary>
-public sealed class DexResponse
+public sealed class DexResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
@@ -124,7 +124,7 @@ public sealed class DexStrikeRow
 /// <para>Strike-by-strike dealer vanna exposure. Includes a textual
 /// <see cref="VexInterpretation"/> describing the directional vol-spot linkage.</para>
 /// </summary>
-public sealed class VexResponse
+public sealed class VexResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
@@ -168,7 +168,7 @@ public sealed class VexStrikeRow
 /// <para>Strike-by-strike dealer charm exposure (delta decay per unit time).
 /// Includes a textual <see cref="ChexInterpretation"/>.</para>
 /// </summary>
-public sealed class ChexResponse
+public sealed class ChexResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
