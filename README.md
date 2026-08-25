@@ -40,12 +40,12 @@ delivered to the node that answered, plus `endpoint_version` identifying the dep
 that produced it.
 
 ```csharp
-var gex = await client.GexAsync("SPY", at: "2024-03-15T14:30:00Z");
+var gex = await client.GexTypedAsync("SPY", "2024-03-15T14:30:00Z");
 
 gex.ArchiveAsOf.EquityOptionsFeed;  // "2024-03-15T14:29:58.100Z"  the rows replayed
 gex.ArchiveAsOf.OiFeed;             // "2024-03-14T20:00:00.000Z"  prior session's close
 gex.DataAsOf.EquityOptionsFeed;     // null - a replay node consumes no live feed
-gex.EndpointVersion;                // "2026.08.25"
+gex.EndpointVersion;                // the deployment that answered
 ```
 
 Every response model inherits `FlashAlphaResponse`, which carries `EndpointVersion`,
