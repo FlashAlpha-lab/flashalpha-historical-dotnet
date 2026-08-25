@@ -27,7 +27,7 @@ public class DataAsOf
     [JsonPropertyName("equity_options_feed")]
     public string? EquityOptionsFeed { get; set; }
 
-    /// <summary>Index spot - SPX, NDX, RUT, VIX.</summary>
+    /// <summary>Index spot - SPX, RUT, VIX and the other index roots.</summary>
     [JsonPropertyName("index_feed")]
     public string? IndexFeed { get; set; }
 
