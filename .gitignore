@@ -61,3 +61,6 @@ appsettings.Development.json
 .m2/
 .review-artifacts/
 .agent-tools/
+
+# Language-server project cache - disposable build artefact
+*.csproj.lscache
