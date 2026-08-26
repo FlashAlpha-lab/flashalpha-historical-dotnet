@@ -14,7 +14,7 @@ namespace FlashAlpha.Historical.Models;
 /// <para>Same response shape as the live API; the only difference is every
 /// historical analytics endpoint requires an <c>at</c> query parameter.</para>
 /// </summary>
-public sealed class VolatilityResponse
+public sealed class VolatilityResponse : FlashAlphaResponse
 {
     /// <summary>Echoed from the request path (e.g. <c>"SPY"</c>).</summary>
     [JsonPropertyName("symbol")]

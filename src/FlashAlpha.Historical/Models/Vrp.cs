@@ -30,7 +30,7 @@ namespace FlashAlpha.Historical.Models;
 ///
 /// <para>Returns 403 <c>tier_restricted</c> for anything below Alpha plan.</para>
 /// </summary>
-public sealed class VrpResponse
+public sealed class VrpResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }

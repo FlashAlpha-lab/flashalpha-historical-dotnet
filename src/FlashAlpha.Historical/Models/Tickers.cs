@@ -10,7 +10,7 @@ namespace FlashAlpha.Historical.Models;
 /// covered session and a count of healthy days. Use the single-symbol form
 /// (<see cref="TickersSingleResponse"/>) when you pass <c>symbol=...</c>.</para>
 /// </summary>
-public sealed class TickersResponse
+public sealed class TickersResponse : FlashAlphaResponse
 {
     /// <summary>Per-symbol coverage rows.</summary>
     [JsonPropertyName("tickers")]
@@ -43,7 +43,7 @@ public sealed class TickersRow
 /// when no <c>symbol</c> filter is supplied. Pick the typed wrapper that matches
 /// your call.</para>
 /// </summary>
-public sealed class TickersSingleResponse
+public sealed class TickersSingleResponse : FlashAlphaResponse
 {
     /// <summary>Underlying symbol (e.g. <c>"SPY"</c>).</summary>
     [JsonPropertyName("symbol")]

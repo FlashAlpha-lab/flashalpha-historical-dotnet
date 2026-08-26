@@ -16,7 +16,7 @@ namespace FlashAlpha.Historical.Models;
 /// Cold-cache responses can take ~1.5s — clients should set a generous
 /// timeout.</para>
 /// </summary>
-public sealed class AdvVolatilityResponse
+public sealed class AdvVolatilityResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }

@@ -15,7 +15,7 @@ namespace FlashAlpha.Historical.Models;
 /// <c>FlashAlphaHistoricalClient.ExposureLevelsAsync</c> without changing
 /// the consumer code. <see cref="AsOf"/> is snapped to the available minute.</para>
 /// </summary>
-public sealed class ExposureLevelsResponse
+public sealed class ExposureLevelsResponse : FlashAlphaResponse
 {
     [JsonPropertyName("symbol")]
     public string? Symbol { get; set; }
