@@ -214,6 +214,21 @@ public sealed class VrpRegime
 
     [JsonPropertyName("gamma_flip")]
     public double? GammaFlip { get; set; }
+
+    /// <summary>
+    /// <c>"available"</c> when <see cref="GammaFlip"/> carries a published level.
+    /// Otherwise a reason code explaining why the level was withheld, e.g.
+    /// <c>"no_boundary"</c>, <c>"stored_sign_mismatch"</c>,
+    /// <c>"insufficient_local_coverage"</c>, <c>"insufficient_quote_quality"</c>,
+    /// <c>"sensitive_root"</c>, <c>"uncertain_root_path"</c>,
+    /// <c>"search_budget"</c>, <c>"quality_budget"</c>.
+    ///
+    /// <para>New reason codes may be added without notice, so treat any
+    /// unrecognized value as "flip unavailable" rather than switching
+    /// exhaustively over the known set.</para>
+    /// </summary>
+    [JsonPropertyName("gamma_flip_status")]
+    public string? GammaFlipStatus { get; set; }
 }
 
 /// <summary>0-100 strategy suitability scores. Each field can be <c>null</c> on historical when warmup is short.</summary>
