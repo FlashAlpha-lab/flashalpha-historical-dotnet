@@ -105,7 +105,14 @@ using var hx = new FlashAlphaHistoricalClient(
 // 1) One snapshot — typed
 var raw = await hx.ExposureSummaryAsync("SPY", "2020-03-16T15:30:00");
 var snap = JsonSerializer.Deserialize<ExposureSummaryResponse>(raw.GetRawText());
-Console.WriteLine($"Regime: {snap?.Regime}, gamma flip: {snap?.GammaFlip}");
+
+// gamma_flip is nullable and is withheld on roughly two of three chains
+// (regime then reads "unknown"). gamma_flip_status says why: "available",
+// or a reason code such as "no_boundary" / "insufficient_local_coverage".
+// Treat an unrecognized status as "unavailable" — new codes get added.
+Console.WriteLine(snap?.GammaFlip is double flip
+    ? $"Regime: {snap.Regime}, gamma flip: {flip}"
+    : $"Regime: {snap?.Regime}, gamma flip: unavailable ({snap?.GammaFlipStatus ?? "unknown"})");
 
 // 2) Comprehensive stock summary at a historical minute
 var sumRaw = await hx.StockSummaryAsync("SPY", "2024-08-05T14:00:00");
