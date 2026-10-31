@@ -1,0 +1,5 @@
+.fa_cache/
+results/
+results_*/
+bin/
+obj/
