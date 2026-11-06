@@ -32,6 +32,21 @@ public class IntegrationTests
 
     private const string SkipReason = "FLASHALPHA_API_KEY not set";
 
+    // ── sell-window ─────────────────────────────────────────────────────────
+
+    [SkippableFact]
+    public async Task SellWindow_ReplaysEntryStrikes()
+    {
+        Skip.IfNot(HasKey, SkipReason);
+        using var client = MakeClient();
+        var r = await client.SellWindowTypedAsync("SPY", "2026-10-16T09:35:00");
+        Assert.Equal("2026-10-16", r!.Session);
+        Assert.Equal(4, r.Windows!.Count);
+        Assert.Equal("sell", r.Windows[1].Action);
+        Assert.NotNull(r.Windows[1].Candidates![0].Legs![0].Strike);
+        Assert.NotNull(r.ArchiveAsOf);
+    }
+
     // ── Coverage ────────────────────────────────────────────────────────────
 
     [SkippableFact]

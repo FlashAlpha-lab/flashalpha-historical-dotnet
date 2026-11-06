@@ -149,6 +149,70 @@ public class ClientTests
     }
 }
 
+/// <summary>sell-window replay unit tests.</summary>
+public class SellWindowTests
+{
+    private sealed class Handler : HttpMessageHandler
+    {
+        private readonly HttpStatusCode _status;
+        private readonly string _body;
+        public HttpRequestMessage? Last { get; private set; }
+        public Handler(HttpStatusCode status, string body) { _status = status; _body = body; }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage req, CancellationToken ct)
+        {
+            Last = req;
+            return Task.FromResult(new HttpResponseMessage(_status)
+            {
+                Content = new StringContent(_body, System.Text.Encoding.UTF8, "application/json"),
+            });
+        }
+    }
+
+    private static FlashAlphaHistoricalClient Make(Handler handler)
+    {
+        var http = new HttpClient(handler) { BaseAddress = new Uri("https://historical.flashalpha.com") };
+        http.DefaultRequestHeaders.Add("X-Api-Key", "TEST");
+        return new FlashAlphaHistoricalClient(http);
+    }
+
+    [Fact]
+    public async Task SellWindowTypedAsync_SendsAtAndBindsEveryField()
+    {
+        var handler = new Handler(HttpStatusCode.OK, """{"symbol":"SPY","session":"2026-10-16","spot":772.255,"quoted_at":"2026-10-16T13:35:00Z","legs_indicative":false,"windows":[{"expiry":"2026-10-16","days_to_expiry":0,"action":"sell","candidates":[{"structure":"short_put","exit":"expiry","legs":[{"side":"sell","quantity":1,"type":"put","strike":769,"delta":-0.19,"bid":0.39,"ask":0.4}],"mid_credit":0.395}]},{"expiry":"2026-10-23","days_to_expiry":7,"action":"skip"},{"expiry":"2026-10-30","days_to_expiry":14,"action":"skip"},{"action":"unavailable"}],"endpoint_version":"2026.09.30","data_as_of":{"node":"f3"},"archive_as_of":{"node":"f3"}}""");
+        using var client = Make(handler);
+
+        var r = await client.SellWindowTypedAsync("SPY", "2026-10-16T09:35:00");
+
+        var uri = handler.Last!.RequestUri!;
+        Assert.Equal("/v1/strategies/sell-window/SPY", uri.AbsolutePath);
+        Assert.Contains("at=2026-10-16T09%3A35%3A00", uri.ToString());
+        Assert.Equal(4, r!.Windows!.Count);
+        var trade = r.Windows[0].Candidates![0];
+        Assert.Equal(0.395, trade.MidCredit);
+        Assert.Equal(769, trade.Legs![0].Strike);
+        Assert.Null(r.Windows[3].Expiry);
+        Assert.Equal("f3", r.ArchiveAsOf!.Node);
+    }
+
+    [Fact]
+    public async Task SellWindowAsync_DateTimeOverload_FormatsAt()
+    {
+        var handler = new Handler(HttpStatusCode.OK, """{"symbol":"SPY"}""");
+        using var client = Make(handler);
+        await client.SellWindowAsync("SPY", new DateTime(2026, 10, 16, 9, 35, 0));
+        Assert.Contains("at=2026-10-16T09%3A35%3A00", handler.Last!.RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task SellWindowAsync_InvalidAt_Throws()
+    {
+        var handler = new Handler(HttpStatusCode.BadRequest, """{"error":"invalid_at","message":"at is in the future."}""");
+        using var client = Make(handler);
+        await Assert.ThrowsAsync<InvalidAtException>(() => client.SellWindowAsync("SPY", "2099-01-02T09:35:00"));
+    }
+}
+
 /// <summary>Replay / Backtester unit tests.</summary>
 public class ReplayTests
 {
