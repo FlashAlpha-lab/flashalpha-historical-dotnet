@@ -536,6 +536,31 @@ public sealed class FlashAlphaHistoricalClient : IDisposable
 
     // ── VRP ───────────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Replays the sell-window answer for any session since 2018, with strikes from the archive chain
+    /// at <paramref name="at"/>. The backtests entered at 09:35 ET, so <c>&lt;session&gt;T09:35:00</c>
+    /// returns the backtest's entry strikes. The session switches at the close: a date-only
+    /// <paramref name="at"/> reads 16:00 ET and returns the answer for the next session. SPY, QQQ and
+    /// IWM; any other symbol returns every window as <c>unavailable</c>. Requires Alpha+.
+    /// </summary>
+    public Task<JsonElement> SellWindowAsync(string symbol, string at, CancellationToken ct = default)
+        => GetAsync($"/v1/strategies/sell-window/{Seg(symbol)}", new() { ["at"] = at }, ct);
+
+    /// <inheritdoc cref="SellWindowAsync(string, string, CancellationToken)"/>
+    public Task<JsonElement> SellWindowAsync(string symbol, DateTime at, CancellationToken ct = default)
+        => SellWindowAsync(symbol, FormatAt(at), ct);
+
+    /// <summary>Strongly-typed variant of <see cref="SellWindowAsync(string, string, CancellationToken)"/>.</summary>
+    public async Task<Models.SellWindowResponse?> SellWindowTypedAsync(string symbol, string at, CancellationToken ct = default)
+    {
+        var element = await SellWindowAsync(symbol, at, ct).ConfigureAwait(false);
+        return element.Deserialize<Models.SellWindowResponse>();
+    }
+
+    /// <inheritdoc cref="SellWindowTypedAsync(string, string, CancellationToken)"/>
+    public Task<Models.SellWindowResponse?> SellWindowTypedAsync(string symbol, DateTime at, CancellationToken ct = default)
+        => SellWindowTypedAsync(symbol, FormatAt(at), ct);
+
     /// <summary>VRP dashboard with date-bounded percentile history (no future leakage).</summary>
     public Task<JsonElement> VrpAsync(string symbol, string at, CancellationToken ct = default)
         => GetAsync($"/v1/vrp/{Seg(symbol)}", new() { ["at"] = at }, ct);
