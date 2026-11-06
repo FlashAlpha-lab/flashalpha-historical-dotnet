@@ -8,8 +8,8 @@ namespace FlashAlpha.Historical.Models;
 /// today? One answer per session for SPY, QQQ and IWM, built from more than 5 million backtests.
 ///
 /// <para>Own response shape, not the strategy decision envelope. <see cref="Spot"/>,
-/// <see cref="QuotedAt"/> and <see cref="LegsIndicative"/> are set when a window sells, and null
-/// otherwise. Docs: https://flashalpha.com/docs/historical-sell-window</para>
+/// <see cref="QuotedAt"/> and <see cref="LegsIndicative"/> are set when a window sells and an option
+/// chain could be loaded, and null otherwise. Docs: https://flashalpha.com/docs/historical-sell-window</para>
 /// </summary>
 public sealed class SellWindowResponse : FlashAlphaResponse
 {
