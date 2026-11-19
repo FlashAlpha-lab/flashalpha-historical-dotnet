@@ -47,6 +47,48 @@ public class IntegrationTests
         Assert.NotNull(r.ArchiveAsOf);
     }
 
+    // ── expiry impact and strike dependency ────────────────────────────────
+
+    [SkippableFact]
+    public async Task ExpiryImpact_ReplaysAt()
+    {
+        Skip.IfNot(HasKey, SkipReason);
+        using var client = MakeClient();
+        var r = await client.ExpiryImpactTypedAsync("SPY", "2026-10-09T15:55:00", limit: 3);
+        Assert.Equal("expiry_removal_sensitivity", r!.AnalysisType);
+        Assert.Equal("2026-10-09", r.SelectedExpiry);
+        Assert.Contains(r.SelectedExpiry!, r.AvailableExpiries!);
+        Assert.NotNull(r.Current!.GrossGexUsd);
+        Assert.NotNull(r.ExcludingExpiry!.Status);
+        Assert.Equal(3, r.Impact!.LargestGrossReductions!.Count);
+        Assert.NotEmpty(r.Strikes!);
+        Assert.NotNull(r.ArchiveAsOf!.Node);
+    }
+
+    [SkippableFact]
+    public async Task StrikeDependency_ReplaysAt()
+    {
+        Skip.IfNot(HasKey, SkipReason);
+        using var client = MakeClient();
+        var r = await client.StrikeDependencyTypedAsync("SPY", "2026-10-09T15:55:00", 670);
+        Assert.Equal("strike_attribution", r!.AnalysisType);
+        Assert.Equal(670, r.Strike);
+        Assert.NotEmpty(r.ByExpiry!);
+        Assert.NotNull(r.ByExpiry![0].ValuationCutoffAt);
+        Assert.NotNull(r.DominantExpiry);
+        Assert.NotNull(r.ArchiveAsOf!.Node);
+    }
+
+    [SkippableFact]
+    public async Task ExpiryImpact_UnsupportedSymbolSurfaces422()
+    {
+        Skip.IfNot(HasKey, SkipReason);
+        using var client = MakeClient();
+        var ex = await Assert.ThrowsAsync<FlashAlphaHistoricalException>(
+            () => client.ExpiryImpactAsync("AAPL", "2026-10-09T15:55:00"));
+        Assert.Equal(422, ex.StatusCode);
+    }
+
     // ── Coverage ────────────────────────────────────────────────────────────
 
     [SkippableFact]

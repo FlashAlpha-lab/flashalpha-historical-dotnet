@@ -193,6 +193,8 @@ All under `FlashAlpha.Historical.Models`:
 | `ExposureLevelsResponse` | `/v1/exposure/levels/{symbol}` | Key dealer-flow levels |
 | `NarrativeResponse` | `/v1/exposure/narrative/{symbol}` | Verbal LLM-ready prose + raw numbers |
 | `ZeroDteResponse` | `/v1/exposure/zero-dte/{symbol}` | 0DTE pin risk, hedging |
+| `ExpiryImpactResponse` | `/v1/exposure/expiry-impact/{symbol}` | SPY or QQQ gamma distribution compared with the same captured inputs after excluding one expiry (Alpha+) |
+| `StrikeDependencyResponse` | `/v1/exposure/strike-dependency/{symbol}` | The gamma at one exact observed SPY or QQQ strike attributed to its expiries (Alpha+) |
 | `MaxPainResponse` | `/v1/maxpain/{symbol}` | Max pain, pain curve, dealer alignment, pin probability |
 | `VrpResponse` | `/v1/vrp/{symbol}` | Variance risk premium + harvest scores |
 

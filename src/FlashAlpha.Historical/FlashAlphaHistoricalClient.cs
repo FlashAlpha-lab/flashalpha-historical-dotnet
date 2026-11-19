@@ -431,6 +431,79 @@ public sealed class FlashAlphaHistoricalClient : IDisposable
     public Task<Models.ZeroDteResponse?> ZeroDteTypedAsync(string symbol, DateTime at, double? strikeRange = null, CancellationToken ct = default)
         => ZeroDteTypedAsync(symbol, FormatAt(at), strikeRange, ct);
 
+    // ── Expiry impact and strike dependency (SPY, QQQ) ────────────────────────
+
+    /// <summary>
+    /// Compares the SPY or QQQ gamma distribution with the same captured inputs after excluding one
+    /// expiry. Spot, Greeks and open interest are held fixed, so this measures how much of the
+    /// concentration depends on one maturity. It is not a forecast of post-expiry prices, dealer
+    /// hedging or the next session's chain. Replays the same calculation at <paramref name="at"/> on
+    /// historical.flashalpha.com. A date-only <paramref name="at"/> uses 15:55 ET. Results are model
+    /// reconstructions from archived quotes; original publication and OI revision times are
+    /// unverified. Requires Alpha or higher. Other symbols return 422 <c>unsupported_symbol</c>.
+    /// </summary>
+    /// <param name="symbol"><c>SPY</c> or <c>QQQ</c>.</param>
+    /// <param name="at">Required replay time.</param>
+    /// <param name="expiry"><c>yyyy-MM-dd</c>, optional. Defaults to the nearest active eligible expiry
+    /// and must be one of <c>available_expiries</c>.</param>
+    /// <param name="limit">1-20, default 5. Sets the rows in <c>impact.largest_gross_reductions</c> and
+    /// <c>impact.strongest_remaining_concentrations</c>; totals and <c>strikes</c> always use the full
+    /// eligible chain.</param>
+    /// <param name="ct">Cancellation token.</param>
+    public Task<JsonElement> ExpiryImpactAsync(string symbol, string at, string? expiry = null, int? limit = null, CancellationToken ct = default)
+    {
+        var p = new Dictionary<string, string?> { ["at"] = at };
+        if (expiry is not null) p["expiry"] = expiry;
+        if (limit.HasValue) p["limit"] = limit.Value.ToString(CultureInfo.InvariantCulture);
+        return GetAsync($"/v1/exposure/expiry-impact/{Seg(symbol)}", p, ct);
+    }
+
+    /// <inheritdoc cref="ExpiryImpactAsync(string, string, string?, int?, CancellationToken)"/>
+    public Task<JsonElement> ExpiryImpactAsync(string symbol, DateTime at, string? expiry = null, int? limit = null, CancellationToken ct = default)
+        => ExpiryImpactAsync(symbol, FormatAt(at), expiry, limit, ct);
+
+    /// <summary>Strongly-typed variant of <see cref="ExpiryImpactAsync(string, string, string?, int?, CancellationToken)"/>.</summary>
+    public async Task<Models.ExpiryImpactResponse?> ExpiryImpactTypedAsync(string symbol, string at, string? expiry = null, int? limit = null, CancellationToken ct = default)
+    {
+        var element = await ExpiryImpactAsync(symbol, at, expiry, limit, ct).ConfigureAwait(false);
+        return element.Deserialize<Models.ExpiryImpactResponse>();
+    }
+
+    /// <inheritdoc cref="ExpiryImpactTypedAsync(string, string, string?, int?, CancellationToken)"/>
+    public Task<Models.ExpiryImpactResponse?> ExpiryImpactTypedAsync(string symbol, DateTime at, string? expiry = null, int? limit = null, CancellationToken ct = default)
+        => ExpiryImpactTypedAsync(symbol, FormatAt(at), expiry, limit, ct);
+
+    /// <summary>
+    /// Attributes the gamma at one exact observed SPY or QQQ strike to its expiries: does the level
+    /// depend on a single maturity? It reports concentration at that strike, not a support/resistance
+    /// probability. Replays the same calculation at <paramref name="at"/> on historical.flashalpha.com.
+    /// A date-only <paramref name="at"/> uses 15:55 ET. Results are model reconstructions from archived
+    /// quotes; original publication and OI revision times are unverified. Requires Alpha or higher.
+    /// Other symbols return 422 <c>unsupported_symbol</c>.
+    /// </summary>
+    /// <param name="symbol"><c>SPY</c> or <c>QQQ</c>.</param>
+    /// <param name="at">Required replay time.</param>
+    /// <param name="strike">Required. Must be an exact listed strike; the request is never snapped to a
+    /// nearby strike (404 <c>strike_not_found</c>).</param>
+    /// <param name="ct">Cancellation token.</param>
+    public Task<JsonElement> StrikeDependencyAsync(string symbol, string at, double strike, CancellationToken ct = default)
+        => GetAsync($"/v1/exposure/strike-dependency/{Seg(symbol)}", new() { ["at"] = at, ["strike"] = D(strike) }, ct);
+
+    /// <inheritdoc cref="StrikeDependencyAsync(string, string, double, CancellationToken)"/>
+    public Task<JsonElement> StrikeDependencyAsync(string symbol, DateTime at, double strike, CancellationToken ct = default)
+        => StrikeDependencyAsync(symbol, FormatAt(at), strike, ct);
+
+    /// <summary>Strongly-typed variant of <see cref="StrikeDependencyAsync(string, string, double, CancellationToken)"/>.</summary>
+    public async Task<Models.StrikeDependencyResponse?> StrikeDependencyTypedAsync(string symbol, string at, double strike, CancellationToken ct = default)
+    {
+        var element = await StrikeDependencyAsync(symbol, at, strike, ct).ConfigureAwait(false);
+        return element.Deserialize<Models.StrikeDependencyResponse>();
+    }
+
+    /// <inheritdoc cref="StrikeDependencyTypedAsync(string, string, double, CancellationToken)"/>
+    public Task<Models.StrikeDependencyResponse?> StrikeDependencyTypedAsync(string symbol, DateTime at, double strike, CancellationToken ct = default)
+        => StrikeDependencyTypedAsync(symbol, FormatAt(at), strike, ct);
+
     // ── Max Pain ──────────────────────────────────────────────────────────────
 
     /// <summary>Strike-by-strike pain curve, OI breakdown, dealer alignment, pin probability.</summary>
