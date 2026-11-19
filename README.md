@@ -186,12 +186,34 @@ Every analytics method takes a required `at` string (or `DateTime` overload):
 | `ExposureLevelsAsync(s, at)` | `/v1/exposure/levels/{s}` |
 | `NarrativeAsync(s, at)` | `/v1/exposure/narrative/{s}` |
 | `ZeroDteAsync(s, at, strikeRange?)` | `/v1/exposure/zero-dte/{s}` |
+| `ExpiryImpactAsync(s, at, expiry?, limit?)` / `ExpiryImpactTypedAsync(s, at, expiry?, limit?)` | `/v1/exposure/expiry-impact/{s}` |
+| `StrikeDependencyAsync(s, at, strike)` / `StrikeDependencyTypedAsync(s, at, strike)` | `/v1/exposure/strike-dependency/{s}` |
 | `MaxPainAsync(s, at, expiration?)` | `/v1/maxpain/{s}` |
 | `StockSummaryAsync(s, at)` | `/v1/stock/{s}/summary` |
 | `VolatilityAsync(s, at)` | `/v1/volatility/{s}` |
 | `AdvVolatilityAsync(s, at)` | `/v1/adv_volatility/{s}` |
 | `VrpAsync(s, at)` | `/v1/vrp/{s}` |
 | `SellWindowAsync(s, at)` / `SellWindowTypedAsync(s, at)` | `/v1/strategies/sell-window/{s}` |
+
+### Expiry impact and strike dependency replay (SPY, QQQ)
+
+Replay either calculation at any minute with `at`. A date-only `at` uses 15:55 ET.
+Results are model reconstructions from archived quotes. Requires Alpha or higher.
+
+```csharp
+using FlashAlpha.Historical;
+using FlashAlpha.Historical.Models;
+
+using var hx = new FlashAlphaHistoricalClient("YOUR_API_KEY");
+
+ExpiryImpactResponse? impact = await hx.ExpiryImpactTypedAsync("SPY", "2026-10-09T15:55:00", limit: 5);
+Console.WriteLine(impact!.Impact!.RemovedGrossSharePct); // % of gross GEX in the excluded expiry
+Console.WriteLine(impact.Impact.NetSignChanged);         // did the net sign flip without it?
+
+StrikeDependencyResponse? level = await hx.StrikeDependencyTypedAsync("SPY", "2026-10-09T15:55:00", 670);
+Console.WriteLine(level!.DominantExpiry);                // yyyy-MM-dd
+Console.WriteLine(level.DominantExpirySharePct);
+```
 
 ## Errors
 

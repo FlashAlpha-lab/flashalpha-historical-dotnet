@@ -42,6 +42,8 @@ identical POCO shapes.
 | `GET /v1/exposure/summary/{symbol}?at=...` | `ExposureSummaryAsync` |
 | `GET /v1/exposure/narrative/{symbol}?at=...` | `NarrativeAsync` |
 | `GET /v1/exposure/zero-dte/{symbol}?at=...` | `ZeroDteAsync` |
+| `GET /v1/exposure/expiry-impact/{symbol}?at=...` | `ExpiryImpactAsync`: compares the SPY or QQQ gamma distribution with the same captured inputs after excluding one expiry (Alpha+) |
+| `GET /v1/exposure/strike-dependency/{symbol}?at=...` | `StrikeDependencyAsync`: attributes the gamma at one exact observed SPY or QQQ strike to its expiries (Alpha+) |
 | `GET /v1/maxpain/{symbol}?at=...` | `MaxPainAsync` |
 | `GET /v1/vrp/{symbol}?at=...` | `VrpAsync` |
 | `GET /v1/stockquote/{symbol}?at=...` | `StockQuoteAsync` |
